@@ -77,12 +77,30 @@ If it fails, keep those logs and the exact firmware version. Restore your backup
 to return to the previous installation. Settings created by the older build
 are retained when copying/merging the directories.
 
+Reading defaults and saved preferences
+-------------------------------------
+New candidate builds include the Touch HD 3 preferences captured on 2026-10-22:
+Droid Sans MTI Arabic, size 49, 100% line spacing; left/top/bottom margins 2 px,
+right margin 0 px; Russian/English hyphenation. The font is supplied by firmware.
+The complete default profile is system/share/cr3/cr3-defaults.ini. User or book
+cr3.ini settings override these defaults. The package does not replace the user
+configuration in system/config/cr3/cr3.ini, history, bookmarks or last-book path.
+The source profile is data/touch-hd3/cr3-defaults.ini.
+
+Candidate builds fix settings serialization to read/write memory streams,
+save preferences on normal exit, preserve pinch font size, and prevent the
+standby timer from accessing the closed document. Verify a preference survives
+closing and reopening CoolReader before disconnecting the reader.
+
 Rebuild on the Ubuntu server
 ----------------------------
 Project: the extracted pocketbook-coolreader source directory
 Run: bash tools/build-touch-hd3.sh
 ARM regressions: python3 tools/test-touch-hd3.py (uses work/firmware runtime).
-Artifacts: dist/coolreader-touch-hd3-fw6.11.2001.zip and its .sha256 file.
+Artifacts: dist/coolreader-touch-hd3-fw6.11.2001-dev.zip and its .sha256 file.
+New builds default to revision dev; set CR3_REVISION for an explicit candidate.
+The build now gates packaging on eight ARM regressions; build-info.json binds
+the report to this binary and records physical-device validation as not performed.
 Intermediate files, SDK, host tools, build and verification logs are in work/.
 The script uses local host tools in work/host if present. A standard Linux
 build host needs cmake, make, zip, gettext and python3.

@@ -27,6 +27,9 @@
 #include "../include/lvstream.h"
 #include "../include/lvptrvec.h"
 #include "../include/crtxtenc.h"
+#include "../include/lvutf8.h"
+#include <vector>
+#include <errno.h>
 #include <stdio.h>
 #include <stdlib.h>
 #include <string.h>
@@ -1013,7 +1016,7 @@ public:
         if ( sync ) {
 //            CRTimerUtil timer;
 //            CRLog::trace("calling fsync");
-            fsync( m_fd );
+            if (fsync(m_fd) != 0) return LVERR_FAIL;
 //            CRLog::trace("fsync took %d ms", (int)timer.elapsed());
         }
 #endif
@@ -2462,21 +2465,21 @@ public:
             packSize = srcPackSize;
             unpSize = srcUnpSize;
         }
-        if ((lvpos_t)(pos + packSize) > (lvpos_t)stream->GetSize())
+        if (pos > stream->GetSize() || packSize > stream->GetSize() - pos)
             return NULL;
         if (hdr.getMethod() == 0)
         {
             // store method, copy as is
-            if ( hdr.getPackSize() != hdr.getUnpSize() )
+            if (packSize != unpSize)
                 return NULL;
-            LVStreamFragment * fragment = new LVStreamFragment( stream, pos, hdr.getPackSize());
+            LVStreamFragment * fragment = new LVStreamFragment(stream, pos, packSize);
             fragment->SetName( name.c_str() );
             return fragment;
         }
         else if (hdr.getMethod() == 8)
         {
             // deflate
-            LVStreamRef srcStream( new LVStreamFragment( stream, pos, hdr.getPackSize()) );
+            LVStreamRef srcStream( new LVStreamFragment(stream, pos, packSize) );
             LVZipDecodeStream * res = new LVZipDecodeStream( srcStream, pos,
                 packSize, unpSize, hdr.getCRC() );
             res->SetName( name.c_str() );
@@ -2692,7 +2695,16 @@ public:
 			//  "BeOS","Tandem"};
             const lChar16 * enc_name = (ZipHeader.PackOS==0) ? L"cp866" : L"cp1251";
             const lChar16 * table = GetCharsetByte2UnicodeTable( enc_name );
-            lString16 fName = ByteToUnicode( lString8(fnbuf), table );
+            lString16 fName;
+            if (ZipHeader.Flags & 0x800) {
+                if (!LVIsValidUtf8(fnbuf, SizeToRead)) {
+                    delete item;
+                    return 0;
+                }
+                fName = Utf8ToUnicode(lString8(fnbuf, SizeToRead));
+            } else {
+                fName = ByteToUnicode(lString8(fnbuf, SizeToRead), table);
+            }
 
             item->SetItemInfo(fName.c_str(), ZipHeader.UnpSize, (ZipHeader.getAttr() & 0x3f));
             item->SetSrc( ZipHeader.getOffset(), ZipHeader.PackSize, ZipHeader.Method );
@@ -3155,7 +3167,7 @@ lvsize_t LVPumpStream( LVStream * out, LVStream * in )
     char buf[5000];
     lvsize_t totalBytesRead = 0;
     lvsize_t bytesRead = 0;
-    in->SetPos(0);
+    if (!out || !in || in->SetPos(0) != 0) return 0;
     lvsize_t bytesToRead = in->GetSize();
     while ( bytesToRead>0 )
     {
@@ -3167,11 +3179,102 @@ lvsize_t LVPumpStream( LVStream * out, LVStream * in )
             break;
         if ( !bytesRead )
             break;
-        out->Write( buf, bytesRead, NULL );
-        totalBytesRead += bytesRead;
+        lvsize_t offset = 0;
+        while (offset < bytesRead) {
+            lvsize_t written = 0;
+            lverror_t status = out->Write(buf + offset, bytesRead - offset, &written);
+            if (written > bytesRead - offset) return totalBytesRead;
+            if (status != LVERR_OK || !written) return totalBytesRead;
+            totalBytesRead += written;
+            offset += written;
+        }
         bytesToRead -= bytesRead;
     }
     return totalBytesRead;
+}
+
+bool LVWriteFileAtomic(lString16 filename, LVStreamRef contents, bool backup)
+{
+    if (filename.empty() || contents.isNull() || contents->SetPos(0) != 0) return false;
+    lString16 directory = LVExtractPath(filename);
+    if (directory.empty()) directory = lString16(".");
+    if (!LVDirectoryExists(directory) && !LVCreateDirectory(directory)) return false;
+    lString16 temporary;
+#ifdef _WIN32
+    wchar_t tempName[MAX_PATH];
+    if (!GetTempFileNameW(directory.c_str(), L"cr3", 0, tempName)) return false;
+    temporary = lString16(tempName);
+    HANDLE fd = CreateFileW(tempName, GENERIC_WRITE, 0, NULL, CREATE_ALWAYS,
+                           FILE_ATTRIBUTE_NORMAL, NULL);
+    if (fd == INVALID_HANDLE_VALUE) { LVDeleteFile(temporary); return false; }
+#else
+    lString8 name = UnicodeToUtf8(filename + lString16(".tmp.XXXXXX"));
+    std::vector<char> writable(name.c_str(), name.c_str() + name.length() + 1);
+    int fd = mkstemp(&writable[0]);
+    if (fd < 0) return false;
+    temporary = Utf8ToUnicode(&writable[0]);
+    struct stat previous;
+    if (stat(UnicodeToUtf8(filename).c_str(), &previous) == 0)
+        fchmod(fd, previous.st_mode & 0777);
+#endif
+    bool ok = true;
+    lvsize_t remaining = contents->GetSize();
+    while (ok && remaining) {
+        char buffer[4096];
+        lvsize_t amount = remaining < sizeof(buffer) ? remaining : sizeof(buffer);
+        lvsize_t readBytes = 0;
+        if (contents->Read(buffer, amount, &readBytes) != LVERR_OK ||
+            !readBytes || readBytes > amount) { ok = false; break; }
+        lvsize_t offset = 0;
+        while (offset < readBytes) {
+#ifdef _WIN32
+            DWORD written = 0;
+            if (!WriteFile(fd, buffer + offset, readBytes - offset, &written, NULL) || !written) {
+                ok = false; break;
+            }
+#else
+            ssize_t written = write(fd, buffer + offset, readBytes - offset);
+            if (written < 0 && errno == EINTR) continue;
+            if (written <= 0) { ok = false; break; }
+#endif
+            offset += written;
+        }
+        remaining -= readBytes;
+    }
+#ifdef _WIN32
+    if (ok && !FlushFileBuffers(fd)) ok = false;
+    if (!CloseHandle(fd)) ok = false;
+#else
+    if (ok && fsync(fd) != 0) ok = false;
+    if (close(fd) != 0) ok = false;
+#endif
+    // Back up without renaming the live file away: readers always see a complete file.
+    if (ok && backup && LVFileExists(filename)) {
+        LVStreamRef previous = LVOpenFileStream(filename.c_str(), LVOM_READ);
+        ok = !previous.isNull() && LVWriteFileAtomic(filename + lString16(".bak"), previous, false);
+    }
+    if (ok) {
+#ifdef _WIN32
+        ok = MoveFileExW(temporary.c_str(), filename.c_str(),
+                         MOVEFILE_REPLACE_EXISTING | MOVEFILE_WRITE_THROUGH) != 0;
+#else
+        ok = rename(UnicodeToUtf8(temporary).c_str(), UnicodeToUtf8(filename).c_str()) == 0;
+        if (ok) {
+            int dirfd = open(UnicodeToUtf8(directory).c_str(), O_RDONLY | O_DIRECTORY);
+            // FAT implementations may not support directory fsync.
+            if (dirfd < 0) ok = false;
+            else {
+                if (fsync(dirfd) != 0 && errno != EINVAL && errno != ENOTSUP) ok = false;
+                if (close(dirfd) != 0) ok = false;
+            }
+        }
+#endif
+    }
+    if (!ok) {
+        LVDeleteFile(temporary);
+        CRLog::error("Cannot atomically save %s", UnicodeToUtf8(filename).c_str());
+    }
+    return ok;
 }
 
 bool LVDirectoryIsEmpty(const lString8& path) {

@@ -1,18 +1,16 @@
-*.*~
-qtbuild
-v3build
-v5build
-wxbuild
-qtbuild
-qt-build
-qtcreator-build
-/pb360
-/pbpro2
-/pbpro4
-/pbpro5
-/patches
-/000000
-*~
-
+# Build environments and release artifacts stay outside the source tree.
 /work/
 /dist/
+/build/
+/cmake-build-*/
+*.mo
+*.cr3skin
+*.zip
+CMakeUserPresets.json
+
+# Editor and operating-system files.
+*~
+*.swp
+.DS_Store
+._*
+__pycache__/

@@ -289,6 +289,17 @@ lString16 EscapeAmpersand( lString16 s )
 
 static void putTagValue( LVStream * stream, int level, const char * tag, lString16 value )
 {
+    // Escape once, here, for metadata, filenames and all bookmark text.
+    lString16 escaped;
+    for (int i = 0; i < value.length(); ++i) {
+        switch (value[i]) {
+        case '&': escaped << "&amp;"; break;
+        case '<': escaped << "&lt;"; break;
+        case '>': escaped << "&gt;"; break;
+        default: escaped.append(1, value[i]); break;
+        }
+    }
+    value = escaped;
     for ( int i=0; i<level; i++ )
         *stream << "  ";
     *stream << "<" << tag;
@@ -325,6 +336,7 @@ static void putBookmark( LVStream * stream, CRBookmark * bmk )
 
 bool CRFileHist::saveToStream( LVStream * targetStream )
 {
+    if (!targetStream) return false;
     LVStreamRef streamref = LVCreateMemoryStream(NULL, 0, false, LVOM_WRITE);
     LVStream * stream = streamref.get();
     const char * xml_hdr = "\xef\xbb\xbf<?xml version=\"1.0\" encoding=\"utf-8\"?>\r\n<FictionBookMarks>\r\n";
@@ -338,7 +350,7 @@ bool CRFileHist::saveToStream( LVStream * targetStream )
         putTagValue( stream, 3, "doc-title", rec->getTitle() );
         putTagValue( stream, 3, "doc-author", rec->getAuthor() );
         putTagValue( stream, 3, "doc-series", rec->getSeries() );
-        putTagValue( stream, 3, "doc-filename", EscapeAmpersand(rec->getFileName()) );
+        putTagValue( stream, 3, "doc-filename", rec->getFileName() );
         putTagValue( stream, 3, "doc-filepath", rec->getFilePath() );
         putTagValue( stream, 3, "doc-filesize", lString16::itoa( (unsigned int)rec->getFileSize() ) );
         putTag( stream, 2, "/file-info" );
@@ -352,8 +364,7 @@ bool CRFileHist::saveToStream( LVStream * targetStream )
         putTag( stream, 1, "/file" );
     }
     *stream << xml_ftr;
-    LVPumpStream( targetStream, stream );
-    return true;
+    return LVPumpStream(targetStream, stream) == stream->GetSize();
 }
 
 static void splitFName( lString16 pathname, lString16 & path, lString16 & name )

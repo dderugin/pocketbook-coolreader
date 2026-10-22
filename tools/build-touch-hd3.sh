@@ -8,7 +8,8 @@ if [[ -d "$root/work/host/usr/bin" ]]; then
     export PATH="$root/work/host/usr/bin:$PATH"
     export LD_LIBRARY_PATH="$root/work/host/usr/lib/x86_64-linux-gnu${LD_LIBRARY_PATH:+:$LD_LIBRARY_PATH}"
 fi
-build="$root/work/build-touch-hd3-fw6"
+build="${CR3_BUILD_DIR:-$root/work/build-touch-hd3-fw6}"
+revision="${CR3_REVISION:-dev}"
 cmake -S "$root" -B "$build" \
     -DCMAKE_TOOLCHAIN_FILE="$root/tools/toolchain-touch-hd3.cmake" \
     -DCMAKE_POLICY_VERSION_MINIMUM=3.5 \
@@ -21,6 +22,17 @@ cmake -S "$root" -B "$build" \
     -DBACKGROUND_CACHE_FILE_CREATION=ON -DENABLE_PB_DB_STATE=OFF \
     -DCR3_JPEG=ON -DCR3_PNG=OFF -DWITH_HARFBUZZ=OFF
 cmake --build "$build" --parallel "${JOBS:-$(nproc)}"
-"$POCKETBOOK_SDK/usr/bin/arm-obreey-linux-gnueabi-objcopy" --only-keep-debug "$build/cr3gui/cr3-pb.app" "$build/cr3gui/cr3-pb.debug"
-"$POCKETBOOK_SDK/usr/bin/arm-obreey-linux-gnueabi-strip" "$build/cr3gui/cr3-pb.app"
-python3 "$root/tools/package-touch-hd3.py" "$build"
+# Preserve the link output, including on no-change incremental builds.
+mkdir -p "$build/package"
+binary="$build/cr3gui/cr3-pb.app"
+debug="$build/cr3gui/cr3-pb.debug"
+staged="$build/package/cr3-pb.app"
+readelf="$POCKETBOOK_SDK/usr/bin/arm-obreey-linux-gnueabi-readelf"
+"$readelf" -S "$binary" | grep '\.debug_info' >/dev/null || { echo 'Missing debug information; relink the application' >&2; exit 1; }
+"$POCKETBOOK_SDK/usr/bin/arm-obreey-linux-gnueabi-objcopy" --only-keep-debug "$binary" "$debug"
+cp "$binary" "$staged"
+"$POCKETBOOK_SDK/usr/bin/arm-obreey-linux-gnueabi-strip" "$staged"
+"$POCKETBOOK_SDK/usr/bin/arm-obreey-linux-gnueabi-objcopy" --add-gnu-debuglink="$debug" "$staged"
+python3 "$root/tools/test-touch-hd3.py" --build "$build" --application "$staged"
+python3 "$root/tools/test-build-metadata.py"
+python3 "$root/tools/package-touch-hd3.py" "$build" --binary "$staged" --revision "$revision"

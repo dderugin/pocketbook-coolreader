@@ -1251,6 +1251,7 @@ class CRMenu : public CRGUIWindowBase, public CRMenuItem {
         virtual lString16 getSubmenuValue();
         virtual void toggleSubmenuValue();
         virtual int getItemHeight();
+        virtual bool getTitleRect(lvRect &rc);
         virtual lvPoint getMaxItemSize();
         virtual lvPoint getItemSize();
         virtual lvPoint getSize();
@@ -1488,6 +1489,7 @@ public:
     virtual bool setSelected(bool selected)
     {
         if (selected != _selected) {
+            _selected = selected;
             LVDrawBuf & buf = *_parent->getWindowManager()->getScreen()->getCanvas();
             int flags = selected ? CRButtonSkin::ENABLED|CRButtonSkin::PRESSED : CRButtonSkin::ENABLED;
             _btnSkin->drawButton(buf, _rect, flags);

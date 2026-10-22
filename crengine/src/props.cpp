@@ -622,7 +622,9 @@ bool CRPropAccessor::loadFromStream( LVStream * stream )
 /// save to stream
 bool CRPropAccessor::saveToStream( LVStream * targetStream )
 {
-    if ( !targetStream || targetStream->GetMode()!=LVOM_WRITE )
+    // Memory streams used by atomic settings saves are read/write streams.
+    if ( !targetStream || (targetStream->GetMode()!=LVOM_WRITE &&
+                          targetStream->GetMode()!=LVOM_READWRITE) )
         return false;
     LVStreamRef streamref = LVCreateMemoryStream(NULL, 0, false, LVOM_WRITE);
     LVStream * stream = streamref.get();
@@ -631,8 +633,7 @@ bool CRPropAccessor::saveToStream( LVStream * targetStream )
     for ( int i=0; i<getCount(); i++ ) {
         *stream << getPath() << getName(i) << "=" << addBackslashChars(UnicodeToUtf8(getValue(i))) << "\r\n";
     }
-    LVPumpStream( targetStream, stream );
-    return true;
+    return LVPumpStream(targetStream, stream) == stream->GetSize();
 }
 
 //============================================================================

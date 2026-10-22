@@ -15,7 +15,7 @@
 #include <cr3version.h>
 #include "cr3pocketbook.h"
 #include <inkview.h>
-#include <regex.h>
+#include "pbdictionary.h"
 #ifdef POCKETBOOK_FW6
 #include <signal.h>
 #include <sys/ucontext.h>
@@ -29,7 +29,6 @@
     #include "web.h"
     #include "ota_update.h"
     #include "pb_toc.h"
-    #include "readingStats.h"
 #endif
 
 #ifdef PB_DB_STATE_SUPPORTED
@@ -115,9 +114,6 @@ int fw_minor;
 int touchPointing;
 std::clock_t last_drawTemporaryZoom;
 
-#ifdef POCKETBOOK_PRO
-ReadingStats *readingStats = NULL;
-#endif
 
 void setCustomSystemTheme();
 void removeCustomSystemTheme();
@@ -2188,7 +2184,7 @@ protected:
 
                 if( newFontSize != currentFontSize ) {
                     main_win->getDocView()->setFontSize(newFontSize);
-
+                    main_win->getProps()->setInt(PROP_FONT_SIZE, main_win->getDocView()->getFontSize());
                     main_win->saveSettings(lString16::empty_str);
                 }
                 else {
@@ -3417,7 +3413,7 @@ void CRPbDictionaryView::searchDictionary()
 {
     _searchPattern.clear();
 
-    strcpy(key_buffer, UnicodeToUtf8(lString16(_word)).c_str());
+    LVCopyUtf8(key_buffer, sizeof(key_buffer), UnicodeToUtf8(_word).c_str());
     // OpenKeyboard(const_cast<char *>("@Search"), key_buffer, KEY_BUFFER_LEN, 0, searchHandler);
     OpenCustomKeyboard(DICKEYBOARD, const_cast<char *>("@Search"), key_buffer, KEY_BUFFER_LEN, 0, searchHandler);
 }
@@ -3811,37 +3807,10 @@ lString8 CRPbDictionaryView::createArticle(const char *word, const char *transla
     return article;
 }
 
-#define CR_PB_DICT_REDIRECT_PREFIXES "to|of|see|from"
-lString16 CRPbDictionaryView::detectDictionaryRedirectFor(const char* translation) {
-
-    if( CRPocketBookDocView::instance->getProps()->getStringDef(PROP_POCKETBOOK_DICT) != lString16("Webster's 1913 Dictionary") ) {
-        return lString16("");
-    }
-
-    regex_t pregx;
-    regmatch_t pmatch[10];
-    int rule, i;
-    char tmpvalue[256];
-
-    static const char *regex_rules[2] = {
-        "^[\n\t ]+?\\([^\\)]+?\\)[\t ]+("CR_PB_DICT_REDIRECT_PREFIXES")[\t ]+([a-z]+)[\\. \t\n]+?$",
-        "^[\n\t ]+?\\([^\\)]+?\\)[\t ]+([a-z\\.]+[ ])?("CR_PB_DICT_REDIRECT_PREFIXES")[\t ]+([a-z]+)[\\. \n\t]+?$"
-        };
-
-    for( rule = 0; rule < 2; rule++ ) {
-        if( regcomp(&pregx, regex_rules[rule], REG_ICASE|REG_EXTENDED) == 0 ) {
-            if( regexec(&pregx, translation, 5, pmatch,0) == 0 ) {
-                for( i = 0 ; i < 5 && pmatch[i].rm_so!=-1 ; i++ );
-                if( i > 0 && pmatch[--i].rm_so!=-1 ) {
-                    memset(tmpvalue, 0, 256);
-                    strncpy(tmpvalue, &translation[pmatch[i].rm_so], pmatch[i].rm_eo-pmatch[i].rm_so);
-                    return lString16(tmpvalue);
-                }
-            }
-        }
-    }
-
-    return lString16("");
+lString16 CRPbDictionaryView::detectDictionaryRedirectFor(const char *translation) {
+    if (CRPocketBookDocView::instance->getProps()->getStringDef(PROP_POCKETBOOK_DICT)
+            != lString16("Webster's 1913 Dictionary")) return lString16();
+    return PbDictionary::redirectFor(translation);
 }
 
 void CRPbDictionaryView::translate(const lString16 &w)
@@ -3856,9 +3825,13 @@ void CRPbDictionaryView::translate(const lString16 &w)
         return;
     }
     _word = s16;
+    PbDictionary::RedirectChain redirects;
 
     CRLog::trace("CRPbDictionaryView::translate() start, _dictIndex = %d", _dictIndex);
     if (_dictIndex >= 0) {
+      for (;;) {
+        redirects.add(s16);
+        _word = s16;
         lString8 what = UnicodeToUtf8( s16 );
         char *word = NULL, *translation = NULL;
 
@@ -3886,20 +3859,14 @@ void CRPbDictionaryView::translate(const lString16 &w)
             CRLog::trace("LookupWord(%s) returned %d", what.c_str(), _translateResult);
         }
 
+        if (_translateResult != 0 && !word) _translateResult = 0;
         if (_translateResult != 0) {
 
             // Check if it's a translation redirection
             lString16 redirect = detectDictionaryRedirectFor(translation);
-            if( !redirect.empty() ) {
-                lString16 tmp = redirect;
-                tmp.lowercase();
-                s16.lowercase();
-
-                // Avoid infinite loops
-                if( tmp != s16 ) {
-                    translate(redirect);
-                    return;
-                }
+            if (redirects.canFollow(redirect)) {
+                s16 = redirect;
+                continue;
             }
 
             if (_translateResult == 1) {
@@ -3916,6 +3883,8 @@ void CRPbDictionaryView::translate(const lString16 &w)
             _newWord = _newTranslation = NULL;
             body << TR("@Word_not_found");
         }
+        break;
+      }
     } else if (_dictCount <= 0) {
         body << TR("@Dic_not_installed");
     } else {
@@ -4905,7 +4874,14 @@ int InitDoc(const char *exename, char *fileName)
             NULL
         };
         lString16 ini;
-        CRPropRef props = LVCreatePropsContainer();
+        // Packaged preferences are a fallback; user and book settings win.
+        // Keep this separate from cr3.ini so an upgrade never replaces it.
+        CRPropRef defaults = LVCreatePropsContainer();
+        LVStreamRef defaultsStream = LVOpenFileStream(
+            L""USERDATA"/share/cr3/cr3-defaults.ini", LVOM_READ);
+        if (!defaultsStream.isNull())
+            defaults->loadFromStream(defaultsStream.get());
+        CRPropRef props = LVClonePropsContainer(defaults);
         int bpp = 0;
 
         int fb2Pos = filename16.pos(lString16(L".fb2"));
@@ -5054,6 +5030,7 @@ int InitDoc(const char *exename, char *fileName)
                 main_win->loadCSS( lString16(USERDATA2"/share/cr3/" ) + lString16(css_file_name) );
         main_win->setBookmarkDir(lString16(FLASHDIR"/cr3_notes/"));
         CRLog::debug("Loading settings...");
+        main_win->getProps()->set(defaults);
         main_win->loadSettings( ini );
 
         int orient;
@@ -5076,12 +5053,6 @@ int InitDoc(const char *exename, char *fileName)
             return 0;
         }
 
-        CRLog::trace("init stats...");
-        #ifdef POCKETBOOK_PRO
-        if (ldomDocCache::enabled()) {
-            readingStats = new ReadingStats(currentCacheDir+lString16("_stats"), openedCacheFile);
-        }
-        #endif
 
     }
     return 1;
@@ -5202,6 +5173,7 @@ lString16 getPbModelNumber() {
 
 #ifdef POCKETBOOK_PRO
 void SetSaveStateTimer(){
+    if (exiting || !CRPocketBookDocView::instance) return;
     exiting = true;
     CRPocketBookDocView::instance->closing();
     exiting = false;
@@ -5378,7 +5350,8 @@ void exitStandByMode() {
     restartStandByTimer();
 }
 void restartStandByTimer() {
-
+    // CloseApp can synchronously destroy the document during an input event.
+    if (exiting || !CRPocketBookDocView::instance) return;
     CRPropRef props = CRPocketBookDocView::instance->getProps();
     int delay = props->getIntDef(PROP_DISPLAY_STANDBY, 5);
 
@@ -5672,6 +5645,9 @@ int main_handler(int type, int par1, int par2)
     case EVT_EXIT:
         exiting = true;
         stopStandByTimer();
+#ifdef POCKETBOOK_PRO
+        ClearTimer(SetSaveStateTimer);
+#endif
         if (CRPocketBookWindowManager::instance->getWindowCount() != 0)
             CRPocketBookWindowManager::instance->closeAllWindows();
         ShutdownCREngine();

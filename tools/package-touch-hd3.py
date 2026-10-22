@@ -1,24 +1,41 @@
 #!/usr/bin/env python3
 """Package the FW6 binary with upstream data without modifying source assets."""
 from pathlib import Path
+import argparse
+import re
+import os
 import hashlib
 import json
 import shutil
-import subprocess
 import sys
+import subprocess
 import zipfile
+from build_metadata import source_metadata, sha256, verified_report
 
+parser = argparse.ArgumentParser(description=__doc__)
+parser.add_argument('build', type=Path)
+parser.add_argument('--revision', required=True, help='Explicit revision, e.g. dev or 6')
+parser.add_argument('--binary', type=Path)
+parser.add_argument('--dist-dir', type=Path)
+args = parser.parse_args()
+if not re.fullmatch(r'[A-Za-z0-9][A-Za-z0-9._-]*', args.revision):
+    parser.error('Revision must be a filename-safe identifier')
 root = Path(__file__).resolve().parent.parent
-build = Path(sys.argv[1]).resolve()
-binary = build / 'cr3gui/cr3-pb.app'
-if not binary.is_file():
-    raise SystemExit(f'Missing build: {binary}')
-stage = root / 'work/package-touch-hd3'
+build = args.build.resolve()
+binary = (args.binary or build / 'package/cr3-pb.app').resolve()
+report = verified_report(json.loads((build / 'test-results.json').read_text()), binary, root, build)
+stage = root / ('work/package-touch-hd3-' + args.revision)
 if stage.exists():
     shutil.rmtree(stage)
 share = stage / 'system/share/cr3'
-shutil.copytree(root / 'data/common/system/share/cr3', share)
-shutil.copy2(root / 'data/firmware-specific/pro5/system/share/cr3/devices.ini', share)
+share.mkdir(parents=True)
+assets = root / 'cr3gui/data'
+for stylesheet in sorted(assets.glob('*.css')):
+    shutil.copy2(stylesheet, share)
+for directory in ('hyph', 'chn', 'manual'):
+    shutil.copytree(assets / directory, share / directory)
+shutil.copy2(root / 'data/touch-hd3/devices.ini', share)
+shutil.copy2(root / 'data/touch-hd3/cr3-defaults.ini', share)
 for name in ('bin', 'skins', 'i18n', 'keymaps'):
     (share / name).mkdir(exist_ok=True)
 shutil.copy2(binary, share / 'bin/cr3-pb.app')
@@ -38,24 +55,33 @@ shutil.copy2(root / 'data/touch-hd3/CoolReader.app', apps / 'CoolReader.app')
 shutil.copy2(root / 'data/touch-hd3/Welcome.fb2', share / 'Welcome.fb2')
 launcher.chmod(0o755)
 shutil.copy2(root / 'LICENSE', stage / 'LICENSE')
-shutil.copy2(root / 'README-touch-hd3.txt', stage / 'README-touch-hd3.txt')
+(stage / 'README-touch-hd3.txt').write_text(
+    f"Candidate revision: {args.revision}\nBinary SHA-256: {sha256(binary)}\n"
+    "Automated ARM tests passed. This candidate has NOT been tested on a physical reader.\n"
+    "The R5 verification notes below describe the historical R5 build only.\n\n"
+    + (root / 'README-touch-hd3.txt').read_text())
 # This is intentionally a template: never overwrite a reader's custom config.
 shutil.copy2(root / 'data/touch-hd3/extensions.cfg.example', stage / 'extensions.cfg.example')
+sdk = Path(os.environ.get('POCKETBOOK_SDK', root / 'work/sdk/SDK-B288-6.10'))
+compiler = sdk / 'usr/bin/arm-obreey-linux-gnueabi-g++'
 manifest = {
-    'application': 'CoolReader 0.0.6-17-62.1 + Touch HD 3 FW6 compatibility changes',
+    'application': 'CoolReader for PocketBook Touch HD 3',
     'device': 'PocketBook Touch HD 3 / PB632 / B288 / ARM Cortex-A7 softfp',
-    'target_firmware': 'U632.6.11.2001 (2026-09-01)',
-    'sdk': 'SDK-B288-6.10, GCC 13.3.0 / glibc 2.39',
-    'revision': 5,
-    'startup_fix': 'rename the skin language reference to crCurrentLang; retain prior CSS, reference initialization and library isolation fixes',
-    'source_commit': subprocess.check_output(['git', 'rev-parse', 'HEAD'], cwd=root, text=True).strip(),
-    'binary_sha256': hashlib.sha256(binary.read_bytes()).hexdigest(),
-    'validation': 'Four ARM regressions; PB632 foreground drawing with Welcome and the previously failing Amnesia FB2; user confirmed display and physical page buttons',
+    'target_firmware': 'U632.6.11.2001',
+    'revision': args.revision,
+    'source': source_metadata(root),
+    'compiler': subprocess.check_output([str(compiler), '--version'], text=True).splitlines()[0],
+    'build_flags': (build / 'crengine/CMakeFiles/crengine.dir/flags.make').read_text(),
+    'binary_sha256': sha256(binary),
+    'automated_validation': report,
+    'device_validation': {'status': 'not-performed', 'binary_sha256': sha256(binary)},
 }
+subprocess.run([sys.executable, str(root / 'tools/test-package-assets.py'), str(stage)], check=True)
+manifest['package_asset_validation'] = 'passed'
 (stage / 'build-info.json').write_text(json.dumps(manifest, indent=2) + '\n')
-dest = root / 'dist'
+dest = args.dist_dir or root / 'dist'
 dest.mkdir(exist_ok=True)
-archive = dest / 'coolreader-touch-hd3-fw6.11.2001.zip'
+archive = dest / ('coolreader-touch-hd3-fw6.11.2001-' + args.revision + '.zip')
 with zipfile.ZipFile(archive, 'w', zipfile.ZIP_DEFLATED) as z:
     for p in sorted(stage.rglob('*')):
         if p.is_file():

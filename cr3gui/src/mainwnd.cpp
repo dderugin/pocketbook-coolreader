@@ -553,6 +553,8 @@ void V3DocViewWin::closing()
 	_dict = NULL;
     _docview->savePosition();
     CRLog::trace("after docview->savePosition()");
+    _props->setInt(PROP_FONT_SIZE, _docview->getFontSize());
+    saveSettings(lString16::empty_str);
     saveHistory( lString16::empty_str, _props->getBoolDef( PROP_AUTOSAVE_BOOKMARKS, true ) );
 }
 
@@ -583,31 +585,8 @@ bool V3DocViewWin::saveHistory( lString16 filename, bool exportBookmarks )
     }
     _historyFileName = filename;
     log << "V3DocViewWin::saveHistory(" << filename << ")";
-    LVStreamRef stream = LVOpenFileStream( filename.c_str(), LVOM_WRITE );
-    if ( !stream ) {
-        lString16 path16 = LVExtractPath( filename );
-        lString8 path = UnicodeToLocal( path16 );
-#ifdef _WIN32
-        if ( !CreateDirectoryW( path16.c_str(), NULL ) ) {
-            CRLog::error("Cannot create directory %s", path.c_str() );
-        } else {
-            stream = LVOpenFileStream( filename.c_str(), LVOM_WRITE );
-        }
-#else
-        path.erase( path.length()-1, 1 );
-        CRLog::warn("Cannot create settings file, trying to create directory %s", path.c_str());
-        if ( mkdir(path.c_str(), S_IRWXU | S_IRWXG | S_IROTH | S_IXOTH) ) {
-            CRLog::error("Cannot create directory %s", path.c_str() );
-        } else {
-            stream = LVOpenFileStream( filename.c_str(), LVOM_WRITE );
-        }
-#endif
-    }
-    if ( stream.isNull() ) {
-    	CRLog::error("Error while creating history file %s - position will be lost", UnicodeToUtf8(filename).c_str() );
-    	return false;
-    }
-    return saveHistory( stream );
+    LVStreamRef serialized = LVCreateMemoryStream(NULL, 0, false, LVOM_WRITE);
+    return saveHistory(serialized) && LVWriteFileAtomic(filename, serialized);
 }
 
 void V3DocViewWin::flush()
@@ -667,32 +646,11 @@ bool V3DocViewWin::saveSettings( lString16 filename )
         return false;
     _settingsFileName = filename;
     log << "V3DocViewWin::saveSettings(" << filename << ")";
-    LVStreamRef stream = LVOpenFileStream( filename.c_str(), LVOM_WRITE );
-    if ( !stream ) {
-        lString16 path16 = LVExtractPath( filename );
-        lString8 path = UnicodeToLocal( path16 );
-#ifdef _WIN32
-        if ( !CreateDirectoryW( path16.c_str(), NULL ) ) {
-            CRLog::error("Cannot create directory %s", path.c_str() );
-        } else {
-            stream = LVOpenFileStream( filename.c_str(), LVOM_WRITE );
-        }
-#else
-        path.erase( path.length()-1, 1 );
-        CRLog::warn("Cannot create settings file, trying to create directory %s", path.c_str());
-        if ( mkdir(path.c_str(), S_IRWXU | S_IRWXG | S_IROTH | S_IXOTH) ) {
-            CRLog::error("Cannot create directory %s", path.c_str() );
-        } else {
-            stream = LVOpenFileStream( filename.c_str(), LVOM_WRITE );
-        }
-#endif
-    }
-    if ( stream.isNull() ) {
-        lString8 fn = UnicodeToUtf8( filename );
-        CRLog::error("Cannot open settings file %s for write", fn.c_str() );
-        return false;
-    }
-    return _props->saveToStream( stream.get() );
+    LVStreamRef serialized = LVCreateMemoryStream(NULL, 0, false, LVOM_WRITE);
+    bool saved = _props->saveToStream(serialized.get()) && LVWriteFileAtomic(filename, serialized);
+    if (!saved)
+        CRLog::error("Cannot save settings to %s", LCSTR(filename));
+    return saved;
 }
 
 void V3DocViewWin::applySettings()
