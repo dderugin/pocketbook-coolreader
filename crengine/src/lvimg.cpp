@@ -799,7 +799,8 @@ public:
                     }
                     callback->OnLineDecoded( this, y, row );
                 }
-                callback->OnEndDecode(this, true);
+                jpeg_finish_decompress(&cinfo);
+                callback->OnEndDecode(this, false);
             }
 
         if ( buffer )

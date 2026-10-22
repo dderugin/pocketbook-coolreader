@@ -5,6 +5,7 @@ import subprocess
 
 REQUIRED_TESTS = {
     'reference-initialization', 'css-null-ancestor', 'skin-language-symbol',
+    'dependency-compatibility', 'web-tls',
     'document-render', 'dictionary-safety', 'history-persistence', 'archive-boundaries', 'atomic-faults',
 }
 

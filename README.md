@@ -4,8 +4,8 @@ CoolReader for **Touch HD 3 / PB632**, targeting firmware **6.11.2001**.
 
 [Downloads](https://coolreader.nimbushub.eu/) · [Installation](https://coolreader.nimbushub.eu/installation.html) · [GitHub release](https://github.com/dderugin/pocketbook-coolreader/releases/tag/touch-hd3-fw6-wide-back)
 
-The current build passes eight ARM/QEMU regression groups and is installed on
-the Touch HD 3. Complete interactive validation remains pending. Earlier device
+The published wide-back build passes eight ARM/QEMU regression groups and is
+installed on the Touch HD 3. Complete interactive validation remains pending. Earlier device
 testing confirmed book display and physical page-turn buttons. `build-info.json`
 records automated results separately from device validation.
 Other devices and firmware versions have not been verified by this fork.
@@ -30,15 +30,15 @@ See [the detailed guide](README-touch-hd3.txt) for backups and troubleshooting.
 
 ## Build and test
 
-Use Linux with CMake, Make, gettext, zip, Python 3 and the B288 SDK described in
-the detailed guide. Keep SDKs, extracted firmware and host tools under `work/`.
+Use Linux with CMake 3.18+, Make, gettext, zip, OpenSSL tools, Python 3 and the
+B288 SDK described in the detailed guide. Keep SDKs, extracted firmware and host tools under `work/`.
 
 ```sh
 export POCKETBOOK_SDK="$PWD/work/sdk/SDK-B288-6.10"
 bash tools/build-touch-hd3.sh
 ```
 
-The script builds the ARM application, keeps debug symbols, runs eight ARM/QEMU
+The script builds the ARM application, keeps debug symbols, runs ten ARM/QEMU
 regression groups and checks packaging evidence before producing
 `dist/coolreader-touch-hd3-fw6.11.2001-dev.zip` and its SHA-256 file.
 Set `CR3_REVISION` to label a candidate and `CR3_BUILD_DIR` to use another build
@@ -49,6 +49,15 @@ Published binaries belong in GitHub Releases. Generated packages, translations,
 SDKs and firmware images are excluded from Git. Packaged styles, hyphenation
 patterns, Chinese dictionaries and manuals come from the single asset tree in
 `cr3gui/data`; translations are compiled from `cr3gui/po`.
+
+The build vendors FreeType 2.15.0, libjpeg-turbo 3.2.0, libpng 1.6.59,
+zlib 1.3.2 and curl 8.23.0 as private static libraries. See
+[dependency versions and checksums](thirdparty/versions.json) and
+[dependency notes](thirdparty/README.txt). Unused UnRAR was removed; ZIP,
+CHM and Word support are retained. HTTPS now verifies certificates using
+the firmware trust store. Candidate ZIPs include third-party license notices.
+This dependency-upgrade candidate requires physical-reader validation before
+release.
 
 ## Source layout
 

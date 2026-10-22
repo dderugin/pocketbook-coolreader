@@ -1,5 +1,27 @@
 #include <crengine.h>
 #include "web.h"
+#include <cstdlib>
+#include <limits>
+
+namespace {
+void configureRequest(CURL *curl)
+{
+    curl_easy_setopt(curl, CURLOPT_SSL_VERIFYHOST, 2L);
+    curl_easy_setopt(curl, CURLOPT_SSL_VERIFYPEER, 1L);
+    // Firmware CA store is the build default. Respect OpenSSL's standard
+    // override for private certificate authorities and isolated TLS tests.
+    const char *caFile = std::getenv("SSL_CERT_FILE");
+    if (caFile && *caFile)
+        curl_easy_setopt(curl, CURLOPT_CAINFO, caFile);
+    curl_easy_setopt(curl, CURLOPT_PROTOCOLS_STR, "http,https");
+    curl_easy_setopt(curl, CURLOPT_REDIR_PROTOCOLS_STR, "http,https");
+    curl_easy_setopt(curl, CURLOPT_MAXREDIRS, 5L);
+    curl_easy_setopt(curl, CURLOPT_CONNECTTIMEOUT, 15L);
+    curl_easy_setopt(curl, CURLOPT_TIMEOUT, 60L);
+    curl_easy_setopt(curl, CURLOPT_NOSIGNAL, 1L);
+    curl_easy_setopt(curl, CURLOPT_USERAGENT, "CoolReader/PocketBook");
+}
+}
  
 //have to re-declare static members at file level
 char web::errorBuffer[CURL_ERROR_SIZE];
@@ -79,9 +101,7 @@ string web::easycurl(const string &url, bool post, const string &postparamstring
           curl_easy_setopt(curl, CURLOPT_POST,1);
           curl_easy_setopt(curl, CURLOPT_POSTFIELDS,postparamstring.c_str());
       }
-      curl_easy_setopt(curl, CURLOPT_SSL_VERIFYHOST,  2);
-      curl_easy_setopt(curl, CURLOPT_USERAGENT, "Mozilla/4.0 (compatible; MSIE 5.01; Windows NT 5.0)");
-      curl_easy_setopt(curl, CURLOPT_SSL_VERIFYPEER, false);  // this line makes it work under https
+      configureRequest(curl);
       curl_easy_setopt(curl, CURLOPT_COOKIEFILE, LIB_CURL_COOKIES_FILE);//read from
       curl_easy_setopt(curl, CURLOPT_COOKIEJAR, LIB_CURL_COOKIES_FILE); //write to
  
@@ -129,6 +149,10 @@ bool web::easycurlBinary(const string &url, bool post, const string &postparamst
       // Open file for writing
       CRLog::trace("web::easycurlBinary(): Open file for writing");
       fp = fopen(outfilename.c_str(),"wb");
+      if (!fp) {
+          curl_easy_cleanup(curl);
+          return false;
+      }
 
       // Now set up all of the curl options
       CRLog::trace("web::easycurlBinary(): Now set up all of the curl options");
@@ -143,24 +167,20 @@ bool web::easycurlBinary(const string &url, bool post, const string &postparamst
           curl_easy_setopt(curl, CURLOPT_POST,1);
           curl_easy_setopt(curl, CURLOPT_POSTFIELDS,postparamstring.c_str());
       }
-      curl_easy_setopt(curl, CURLOPT_SSL_VERIFYHOST,  2);
-      curl_easy_setopt(curl, CURLOPT_USERAGENT, "Mozilla/4.0 (compatible; MSIE 5.01; Windows NT 5.0)");
-      curl_easy_setopt(curl, CURLOPT_SSL_VERIFYPEER, false);  // this line makes it work under https
+      configureRequest(curl);
       curl_easy_setopt(curl, CURLOPT_COOKIEFILE, LIB_CURL_COOKIES_FILE);//read from
       curl_easy_setopt(curl, CURLOPT_COOKIEJAR, LIB_CURL_COOKIES_FILE); //write to
  
       // Attempt to retrieve the remote page
       CRLog::trace("web::easycurlBinary(): Attempt to retrieve the remote binary");
       result = curl_easy_perform(curl);
+      if (fclose(fp) != 0 && result == CURLE_OK)
+          result = CURLE_WRITE_ERROR;
  
       // Always cleanup
       CRLog::trace("web::easycurlBinary(): Cleanup");
       curl_easy_cleanup(curl);
  
-      // Close file handle
-      CRLog::trace("web::easycurlBinary(): Close file handle");
-      fclose(fp);
-
       // Did we succeed?
       if (result == CURLE_OK)
       {
@@ -180,9 +200,11 @@ bool web::easycurlBinary(const string &url, bool post, const string &postparamst
 }
 //---------------------------------------------------------------------------
 //---------------------------------------------------------------------------
-int web::writer(char *data, size_t size, size_t nmemb, string *buffer)
+size_t web::writer(char *data, size_t size, size_t nmemb, string *buffer)
 {
-  int result = 0;
+  if (size && nmemb > std::numeric_limits<size_t>::max() / size)
+      return 0;
+  size_t result = 0;
   if (buffer != NULL)
   {
     buffer->append(data, size * nmemb);
@@ -192,8 +214,9 @@ int web::writer(char *data, size_t size, size_t nmemb, string *buffer)
 }
 //---------------------------------------------------------------------------
 size_t web::writerBinary(void *ptr, size_t size, size_t nmemb, FILE *stream) {
-    size_t written = fwrite(ptr, size, nmemb, stream);
-    return written;
+    if (size && nmemb > std::numeric_limits<size_t>::max() / size)
+        return 0;
+    return fwrite(ptr, 1, size * nmemb, stream);
 }
 //---------------------------------------------------------------------------
 string web::urlencode(const string &c)

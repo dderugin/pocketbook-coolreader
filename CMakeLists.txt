@@ -1,4 +1,4 @@
-cmake_minimum_required(VERSION 3.5)
+cmake_minimum_required(VERSION 3.18)
 project(cr3)
 
 option(POCKETBOOK_FW6 "Build for modern PocketBook firmware and SDK" OFF)
@@ -116,65 +116,7 @@ endif (NOT DEFINED ENABLE_DBUS_VIEWER_EVENTS)
 SET (CRGUI_DEFS -DCOLOR_BACKBUFFER=0 -DLDOM_USE_OWN_MEM_MAN=0 -DGRAY_BACKBUFFER_BITS=${GRAY_BACKBUFFER_BITS}
       -DENABLE_DBUS_VIEWER_EVENTS=${ENABLE_DBUS_VIEWER_EVENTS})
 
-#UNRAR support
-if(DEFINED USE_UNRAR)
-  message("Will build static UNRAR library")
-  SET(USE_UNRAR 1)
-  SET(UNRAR_INCLUDE_DIR ${CMAKE_CURRENT_SOURCE_DIR}/thirdparty/unrar)
-  SET(UNRAR_LIBRARIES unrar)
-  ADD_DEFINITIONS(-DUSE_UNRAR=1)
-  INCLUDE_DIRECTORIES(${UNRAR_INCLUDE_DIR})
-  ADD_SUBDIRECTORY(thirdparty/unrar)
-else()
-  message("NO_UNRAR parameter specified: Will not support UNRAR")
-  SET(UNRAR_INCLUDE_DIR)
-  SET(UNRAR_LIBRARIES)
-  ADD_DEFINITIONS(-DUSE_UNRAR=0)
-  SET(USE_UNRAR 0)
-endif(DEFINED USE_UNRAR)
-
-if (NOT WIN32 AND NOT DEFINED USE_STATIC_ZLIB)
-FIND_PACKAGE(ZLIB)
-endif (NOT WIN32 AND NOT DEFINED USE_STATIC_ZLIB)
-
-if (NOT ZLIB_FOUND)
-  message("System ZLIB not found, will build local one\n")
-  #to disable #include <qconfig.h>
-  ADD_DEFINITIONS(-DCR3_PATCH=1)
-  ADD_SUBDIRECTORY(thirdparty/zlib)
-  SET(ZLIB_INCLUDE_DIR ${CMAKE_CURRENT_SOURCE_DIR}/thirdparty/zlib)
-  SET(ZLIB_LIBRARIES z)
-endif (NOT ZLIB_FOUND)
-
-if (NOT WIN32 AND NOT CR3_PNG)
-FIND_PACKAGE(PNG)
-endif (NOT WIN32 AND NOT CR3_PNG)
-
-if (NOT PNG_FOUND)
-  message("System LIBPNG not found, will build local one\n")
-  #to disable #include <qconfig.h>
-  ADD_DEFINITIONS(-DCR3_PATCH=1)
-  INCLUDE_DIRECTORIES(${ZLIB_INCLUDE_DIR})
-  ADD_SUBDIRECTORY(thirdparty/libpng)
-  SET(PNG_INCLUDE_DIR ${CMAKE_CURRENT_SOURCE_DIR}/thirdparty/libpng)
-  SET(PNG_LIBRARIES png)
-endif (NOT PNG_FOUND)
-
-if (NOT WIN32 AND NOT CR3_JPEG)
-FIND_PACKAGE(JPEG)
-endif (NOT WIN32 AND NOT CR3_JPEG)
-if (NOT JPEG_FOUND)
-  message("System LIBJPEG not found, will build local one\n")
-  ADD_SUBDIRECTORY(thirdparty/libjpeg)
-  SET(JPEG_INCLUDE_DIR ${CMAKE_CURRENT_SOURCE_DIR}/thirdparty/libjpeg)
-  SET(JPEG_LIBRARIES jpeg)
-endif (NOT JPEG_FOUND)
-
-# Keep the patched font renderer bundled and private to the application.
-message("Will build local FREETYPE library")
-ADD_SUBDIRECTORY(thirdparty/freetype)
-SET(FREETYPE_INCLUDE_DIRS ${CMAKE_CURRENT_SOURCE_DIR}/thirdparty/freetype/include)
-SET(FREETYPE_LIBRARIES freetype)
+include(tools/dependencies.cmake)
 
 message("Will build patched LIBCHM library\n")
 ADD_SUBDIRECTORY(thirdparty/chmlib)
@@ -193,10 +135,11 @@ INCLUDE_DIRECTORIES( ${ANTIWORD_INCLUDE_DIR} )
 INCLUDE_DIRECTORIES(
   ${PNG_INCLUDE_DIR}
   ${JPEG_INCLUDE_DIR}
-  ${ZLIB_INCLUDE_DIR}
+  ${ZLIB_INCLUDE_DIRS}
   ${FREETYPE_INCLUDE_DIRS}
   ${ANTIWORD_INCLUDE_DIR}
   ${CHM_INCLUDE_DIR}
+  ${CURL_INCLUDE_DIRS}
 )
 
 if( DEFINED POCKETBOOK_PRO )
@@ -208,7 +151,7 @@ if( DEFINED POCKETBOOK_PRO )
     ${CHM_LIBRARIES}
     ${ZLIB_LIBRARIES}
     ${ANTIWORD_LIBRARIES}
-    curl
+    ${CURL_LIBRARIES}
     inkview
     dl
   )

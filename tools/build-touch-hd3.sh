@@ -19,8 +19,7 @@ cmake -S "$root" -B "$build" \
     -DGUI=CRGUI_PB -DDEVICE_NAME=pb360 -DTARGET_TYPE=ARM \
     -DMAX_IMAGE_SCALE_MUL=2 -DPOCKETBOOK_PRO=ON \
     -DPOCKETBOOK_PRO_FW5=ON -DPOCKETBOOK_FW6=ON \
-    -DBACKGROUND_CACHE_FILE_CREATION=ON -DENABLE_PB_DB_STATE=OFF \
-    -DCR3_JPEG=ON -DCR3_PNG=OFF -DWITH_HARFBUZZ=OFF
+    -DBACKGROUND_CACHE_FILE_CREATION=ON -DENABLE_PB_DB_STATE=OFF
 cmake --build "$build" --parallel "${JOBS:-$(nproc)}"
 # Preserve the link output, including on no-change incremental builds.
 mkdir -p "$build/package"

@@ -35,3 +35,14 @@ for relative in ('applications/CoolReader.app', 'system/bin/cr3-pb.app',
     if (stage / relative).read_bytes() != (root / 'data/touch-hd3' / Path(relative).name).read_bytes():
         raise SystemExit(f'Packaged defaults or launcher differs: {relative}')
 print(f'PASS: {len(expected)} runtime assets, {len(languages)} translations, 4 skins, launchers and defaults')
+
+dependencies = json.loads((root / 'thirdparty/versions.json').read_text())
+if json.loads((stage / 'licenses/versions.json').read_text()) != dependencies:
+    raise SystemExit('Packaged dependency versions differ')
+for dependency in dependencies['bundled']:
+    for name in dependency['licenses']:
+        original = root / 'thirdparty' / dependency['directory'] / name
+        packaged = stage / 'licenses' / dependency['directory'] / name
+        if packaged.read_bytes() != original.read_bytes():
+            raise SystemExit(f'Missing or changed license: {dependency["name"]}/{name}')
+print('PASS: pinned dependency manifest and all bundled library notices')
