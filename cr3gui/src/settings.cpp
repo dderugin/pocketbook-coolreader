@@ -1404,39 +1404,7 @@ CRSettingsMenu::CRSettingsMenu( CRGUIWindowManager * wm, CRPropRef newProps, int
         {NULL, NULL}
     };
 
-    item_def_t font_embolding[] = {
-        {"-2.0",   "-16"},
-        {"-1.75",  "-14"},
-        {"-1.5",   "-12"},
-        {"-1.25",  "-10"},
-        {"-1.0",   "-8"},
-        {"-0.875", "-7"},
-        {"-0.75",  "-6"},
-        {"-0.625", "-5"},
-        {"-0.5",   "-4"},
-        {"-0.375", "-3"},
-        {"-0.25",  "-2"},
-        {"-0.125", "-1"},
-        {"0",       "0"},
-        {"0.125",  "1"},
-        {"0.25",   "2"},
-        {"0.375",  "3"},
-        {"0.5",    "4"},
-        {"0.625",  "5"},
-        {"0.75",   "6"},
-        {"0.875",  "7"},
-        {"1.0",    "8"},
-        {"1.25",   "10"},
-        {"1.5",    "12"},
-        {"1.75",   "14"},
-        {"2.0",    "16"},
-        {"2.5",    "20"},
-        {"3.0",    "24"},
-        {"3.5",    "28"},
-        {"4.0",    "32"},
-        {"5.0",    "64"},
-        {NULL, NULL}
-    };
+
 
     item_def_t font_gammas[] = {
         {"0.3",  "0.3"},
@@ -1563,8 +1531,9 @@ CRSettingsMenu::CRSettingsMenu( CRGUIWindowManager * wm, CRPropRef newProps, int
                            valueFont, PROP_FONT_HINTING, font_hinting);
     createSettingsMenuItem(fontSettingsMenu, mm_Kerning, _("Font kerning"), "cr3_option_font_kerning",
                            valueFont, PROP_FONT_KERNING_ENABLED, on_off_option);
-    createSettingsMenuItem(fontSettingsMenu, mm_Embolding, _("Font embolding"), "cr3_option_font_embolding",
-                           valueFont, PROP_FONT_EMBOLDING, font_embolding);
+    // Legacy font.embolding has no adjustable rasterizer backend in CREngine
+    // 3.2. Keep the saved key for rollback; Normal/Bold remains available.
+
     createSettingsMenuItem(fontSettingsMenu, mm_Tracking, _("Tracking"), "cr3_option_font_tracking",
                            valueFont, PROP_FONT_TRACKING, tracking);
     createSettingsMenuItem(fontSettingsMenu, mm_fontGamma, _("Font Gamma"), "cr3_option_font_gamma",

@@ -3476,7 +3476,9 @@ void LVDocView::updateBookMarksRanges()
     clearImageCache();
 
     ldomXRangeList ranges;
-    CRFileHistRecord * rec = m_highlightBookmarks ? getCurrentFileHistRecord() : NULL;
+    // Highlighting is a read operation. Saving here overwrites the last
+    // reading position while restorePosition() is still preparing the view.
+    CRFileHistRecord * rec = m_highlightBookmarks ? m_hist.getRecord(m_filename, m_filesize) : NULL;
     if (rec) {
         LVPtrVector<CRBookmark> &bookmarks = rec->getBookmarks();
         for (int i = 0; i < bookmarks.length(); i++) {
@@ -4042,8 +4044,8 @@ void LVDocView::restorePosition() {
 		//goToBookmark( pos );
 		CRLog::info("LVDocView::restorePosition() - last position is found");
 		_posBookmark = pos; //getBookmark();
-        updateBookMarksRanges();
 		_posIsSet = false;
+        updateBookMarksRanges();
 	} else {
 		CRLog::info(
 				"LVDocView::restorePosition() - last position not found for file %s, size %d",
@@ -4070,7 +4072,7 @@ static void FileToArcProps(CRPropRef props) {
 static bool needToConvertBookmarks(CRFileHistRecord* historyRecord, lUInt32 domVersionRequested)
 {
     bool convertBookmarks = false;
-    if (historyRecord && historyRecord->getBookmarks().length() > 1
+    if (historyRecord
         && domVersionRequested >= DOM_VERSION_WITH_NORMALIZED_XPOINTERS
         && historyRecord->getDOMversion() < DOM_VERSION_WITH_NORMALIZED_XPOINTERS) {
             convertBookmarks = true;
@@ -4133,7 +4135,6 @@ bool LVDocView::LoadDocument(const lChar32 * fname, bool metadataOnly) {
 	bool isArchiveFile = LVSplitArcName(filename32, arcPathName,
 			arcItemPathName);
 
-	int savedRenderFlags = m_props->getIntDef(PROP_RENDER_BLOCK_RENDERING_FLAGS, BLOCK_RENDERING_FLAGS_LEGACY);
 	if (isArchiveFile) {
 		// load from archive, using @/ separated arhive/file pathname
 		CRLog::info("Loading document %s from archive %s", LCSTR(
@@ -4169,26 +4170,11 @@ bool LVDocView::LoadDocument(const lChar32 * fname, bool metadataOnly) {
 		m_doc_props->setString(DOC_PROP_FILE_NAME, arcItemPathName);
 		m_doc_props->setHex(DOC_PROP_FILE_CRC32, stream->getcrc32());
 		CRFileHistRecord* record = m_hist.getRecord( filename32, stream->GetSize() );
-		lUInt32 newDOMVersion;
-		lUInt32 domVersionRequested = m_props->getIntDef(PROP_REQUESTED_DOM_VERSION, gDOMVersionCurrent);
-		bool convertBookmarks = needToConvertBookmarks(record, domVersionRequested) && !metadataOnly;
-		if(convertBookmarks) {
-			newDOMVersion = domVersionRequested;
-			m_props->setInt(PROP_REQUESTED_DOM_VERSION, record->getDOMversion());
-			m_props->setInt(PROP_RENDER_BLOCK_RENDERING_FLAGS, BLOCK_RENDERING_FLAGS_LEGACY);
-		}
-		// loading document
-		if (loadDocumentInt(stream, metadataOnly)) {
-			m_filename = lString32(fname);
-			m_stream.Clear();
-			if(convertBookmarks) {
-				record->convertBookmarks(m_doc, newDOMVersion);
-				m_props->setInt(PROP_REQUESTED_DOM_VERSION, newDOMVersion);
-				m_props->setInt(PROP_RENDER_BLOCK_RENDERING_FLAGS, savedRenderFlags);
-				//FIXME: need to reload file after this
-			}
-			return true;
-		}
+        if (loadDocumentWithHistory(stream, record, metadataOnly)) {
+            m_filename = lString32(fname);
+            m_stream.Clear();
+            return true;
+        }
 		m_stream.Clear();
 		return false;
 	}
@@ -4231,24 +4217,9 @@ bool LVDocView::LoadDocument(const lChar32 * fname, bool metadataOnly) {
 	m_doc_props->setHex(DOC_PROP_FILE_CRC32, stream->getcrc32());
 
 	CRFileHistRecord* record = m_hist.getRecord( filename32, stream->GetSize() );
-	int newDOMVersion;
-	lUInt32 domVersionRequested = m_props->getIntDef(PROP_REQUESTED_DOM_VERSION, gDOMVersionCurrent);
-	bool convertBookmarks = needToConvertBookmarks(record, domVersionRequested) && !metadataOnly;
-	if(convertBookmarks) {
-		newDOMVersion = domVersionRequested;
-		m_props->setInt(PROP_REQUESTED_DOM_VERSION, record->getDOMversion());
-		m_props->setInt(PROP_RENDER_BLOCK_RENDERING_FLAGS, BLOCK_RENDERING_FLAGS_LEGACY);
-	}
-
-	if (loadDocumentInt(stream, metadataOnly)) {
-		m_filename = lString32(fname);
-		m_stream.Clear();
-		if(convertBookmarks) {
-			record->convertBookmarks(m_doc, newDOMVersion);
-			m_props->setInt(PROP_REQUESTED_DOM_VERSION, newDOMVersion);
-			m_props->setInt(PROP_RENDER_BLOCK_RENDERING_FLAGS, savedRenderFlags);
-			//FIXME: need to reload file after this
-		}
+    if (loadDocumentWithHistory(stream, record, metadataOnly)) {
+        m_filename = lString32(fname);
+        m_stream.Clear();
 #define DUMP_OPENED_DOCUMENT_SENTENCES 0 // debug XPointer navigation
 #if DUMP_OPENED_DOCUMENT_SENTENCES==1
         LVStreamRef out = LVOpenFileStream("/tmp/sentences.txt", LVOM_WRITE);
@@ -4322,28 +4293,51 @@ bool LVDocView::LoadDocument( LVStreamRef stream, const lChar32 * contentPath, b
 	m_doc_props->setHex(DOC_PROP_FILE_CRC32, stream->getcrc32());
 
 	CRFileHistRecord* record = m_hist.getRecord( contentPath16, stream->GetSize() );
-	int newDOMVersion;
-	lUInt32 domVersionRequested = m_props->getIntDef(PROP_REQUESTED_DOM_VERSION, gDOMVersionCurrent);
-	int savedRenderFlags = m_props->getIntDef(PROP_RENDER_BLOCK_RENDERING_FLAGS, BLOCK_RENDERING_FLAGS_LEGACY);
-	bool convertBookmarks = needToConvertBookmarks(record, domVersionRequested) && !metadataOnly;
-	if(convertBookmarks) {
-		newDOMVersion = domVersionRequested;
-		m_props->setInt(PROP_REQUESTED_DOM_VERSION, record->getDOMversion());
-		m_props->setInt(PROP_RENDER_BLOCK_RENDERING_FLAGS, BLOCK_RENDERING_FLAGS_LEGACY);
-	}
+    if (loadDocumentWithHistory(stream, record, metadataOnly)) {
+        m_filename = lString32(contentPath);
+        return true;
+    }
+    m_stream.Clear();
+    return false;
+}
 
-	if (loadDocumentInt(stream, metadataOnly)) {
-		m_filename = lString32(contentPath);
-		if(convertBookmarks) {
-			record->convertBookmarks(m_doc, newDOMVersion);
-			m_props->setInt(PROP_REQUESTED_DOM_VERSION, newDOMVersion);
-			m_props->setInt(PROP_RENDER_BLOCK_RENDERING_FLAGS, savedRenderFlags);
-			//FIXME: need to reload file after this
-		}
-		return true;
-	}
-	m_stream.Clear();
-	return false;
+bool LVDocView::loadDocumentWithHistory(LVStreamRef stream, CRFileHistRecord *record, bool metadataOnly)
+{
+    int requested = m_props->getIntDef(PROP_REQUESTED_DOM_VERSION, gDOMVersionCurrent);
+    if (metadataOnly || !needToConvertBookmarks(record, requested))
+        return loadDocumentInt(stream, metadataOnly);
+
+    // Save pointers independently: CRFileHistRecord's copy shares bookmark objects.
+    LVArray<lString32> starts, ends;
+    for (int i = -1; i < record->getBookmarks().length(); ++i) {
+        CRBookmark *bmk = i < 0 ? record->getLastPos() : record->getBookmarks()[i];
+        starts.add(bmk->getStartPos());
+        ends.add(bmk->getEndPos());
+    }
+    int previousVersion = record->getDOMversion();
+    int flags = m_props->getIntDef(PROP_RENDER_BLOCK_RENDERING_FLAGS, BLOCK_RENDERING_FLAGS_DEFAULT);
+    m_props->setInt(PROP_REQUESTED_DOM_VERSION, previousVersion);
+    m_props->setInt(PROP_RENDER_BLOCK_RENDERING_FLAGS, BLOCK_RENDERING_FLAGS_LEGACY);
+    bool loaded = loadDocumentInt(stream, false);
+    bool converted = loaded && record->convertBookmarks(m_doc, requested);
+    m_props->setInt(PROP_REQUESTED_DOM_VERSION, requested);
+    m_props->setInt(PROP_RENDER_BLOCK_RENDERING_FLAGS, flags);
+    if (!converted) {
+        CRLog::error("Cannot migrate reading positions; original history retained");
+        return false;
+    }
+    // Conversion resolves old pointers against an old DOM. Parse again with the
+    // user's current DOM/layout settings before accepting the migrated history.
+    if (stream->SetPos(0) != LVERR_OK || !loadDocumentInt(stream, false)) {
+        for (int i = -1; i < record->getBookmarks().length(); ++i) {
+            CRBookmark *bmk = i < 0 ? record->getLastPos() : record->getBookmarks()[i];
+            bmk->setStartPos(starts[i+1]);
+            bmk->setEndPos(ends[i+1]);
+        }
+        record->setDOMversion(previousVersion);
+        return false;
+    }
+    return true;
 }
 
 void LVDocView::close() {
@@ -6707,11 +6701,20 @@ void LVDocView::propsUpdateDefaults(CRPropRef props) {
     props->setBoolDef(PROP_SHOW_POS_PERCENT, false);
     props->setBoolDef(PROP_STATUS_CHAPTER_MARKS, true);
 
+#if CR_POCKETBOOK == 1
+    // PocketBook's menu offers values omitted by the upstream choice list.
+    // Preserve every supported pixel value rather than silently resetting it.
+    props->limitValueMinMax(PROP_PAGE_MARGIN_TOP, 0, 300, 8);
+    props->limitValueMinMax(PROP_PAGE_MARGIN_BOTTOM, 0, 300, 8);
+    props->limitValueMinMax(PROP_PAGE_MARGIN_LEFT, 0, 300, 8);
+    props->limitValueMinMax(PROP_PAGE_MARGIN_RIGHT, 0, 300, 8);
+#else
     static int margin_options[] = {0, 1, 2, 3, 4, 5, 8, 9, 10, 11, 12, 13, 14, 15, 16, 20, 25, 30, 40, 50, 60, 80, 100, 130, 150, 200, 300};
     props->limitValueList(PROP_PAGE_MARGIN_TOP, margin_options, sizeof(margin_options)/sizeof(int), 6);
     props->limitValueList(PROP_PAGE_MARGIN_BOTTOM, margin_options, sizeof(margin_options)/sizeof(int), 6);
     props->limitValueList(PROP_PAGE_MARGIN_LEFT, margin_options, sizeof(margin_options)/sizeof(int), 6);
     props->limitValueList(PROP_PAGE_MARGIN_RIGHT, margin_options, sizeof(margin_options)/sizeof(int), 6);
+#endif
     static int rounded_corners_margin_options[] = {0, 5, 10, 15, 20, 30, 40, 50, 60, 70,80, 90, 100, 120, 140, 160};
     props->limitValueList(PROP_ROUNDED_CORNERS_MARGIN, rounded_corners_margin_options, sizeof(rounded_corners_margin_options)/sizeof(int), 0);
 

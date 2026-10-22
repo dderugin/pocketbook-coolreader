@@ -445,6 +445,7 @@ protected:
     bool getCursorDocRect( ldomXPointer ptr, lvRect & rc );
     /// load document from stream (internal)
     bool loadDocumentInt( LVStreamRef stream, bool metadataOnly = false );
+    bool loadDocumentWithHistory(LVStreamRef stream, CRFileHistRecord *record, bool metadataOnly);
     /// get section bounds for specific root node and specific section depth level, in 1/100 of percent
     void getSectionBoundsInt( LVArray<int>& bounds, ldomNode* node , lUInt16 section_id, int target_level, int level );
 public:

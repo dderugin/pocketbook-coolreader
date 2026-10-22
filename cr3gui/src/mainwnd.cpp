@@ -60,7 +60,7 @@ DECL_DEF_CR_FONT_SIZES;
 #define PROGRESS_ICON_FILE lString32("cr3_wait_icon.png")
 
 V3DocViewWin::V3DocViewWin( CRGUIWindowManager * wm, lString32 dataDir )
-: CRViewDialog ( wm, lString32::empty_str, lString8::empty_str, lvRect(), false, false ), _dataDir(dataDir), _loadFileStart(0)
+: CRViewDialog ( wm, lString32::empty_str, lString8::empty_str, lvRect(), false, false ), _dataDir(dataDir), _settingsSaveFailed(false), _historySaveFailed(false), _loadFileStart(0)
 {
     CRLog::trace("V3DocViewWin()");
     LVArray<int> sizes( cr_font_sizes, sizeof(cr_font_sizes)/sizeof(int) );
@@ -576,7 +576,8 @@ bool V3DocViewWin::saveHistory( lString32 filename, bool exportBookmarks )
     if ( filename.empty() )
         filename = _historyFileName;
     if ( filename.empty() ) {
-        CRLog::info("Cannot write history file - no file name specified");
+        CRLog::error("Cannot write history file - no file name specified");
+        reportSaveResult(false, true);
         return false;
     }
     if (exportBookmarks) {
@@ -586,7 +587,10 @@ bool V3DocViewWin::saveHistory( lString32 filename, bool exportBookmarks )
     _historyFileName = filename;
     log << "V3DocViewWin::saveHistory(" << filename << ")";
     LVStreamRef serialized = LVCreateMemoryStream(NULL, 0, false, LVOM_WRITE);
-    return saveHistory(serialized) && LVWriteFileAtomic(filename, serialized);
+    bool saved = saveHistory(serialized) && LVWriteFileAtomic(filename, serialized);
+    if (!saved) CRLog::error("Cannot save reading history to %s", LCSTR(filename));
+    reportSaveResult(saved, true);
+    return saved;
 }
 
 void V3DocViewWin::flush()
@@ -636,19 +640,38 @@ bool V3DocViewWin::loadSettings( lString32 filename )
     return false;
 }
 
+void V3DocViewWin::reportSaveResult(bool saved, bool history)
+{
+    bool &failed = history ? _historySaveFailed : _settingsSaveFailed;
+    if (!saved && !failed) {
+#if CR_POCKETBOOK == 1
+        // Show one warning per failure episode, including background/exit saves.
+        // A successful retry permits a warning for a later, independent failure.
+        Message(ICON_WARNING, const_cast<char *>("CoolReader"),
+            history ? _("Could not save reading position and bookmarks. Changes may be lost.")
+                    : _("Could not save settings. Changes may be lost when CoolReader closes."),
+            4000);
+#endif
+    }
+    failed = !saved;
+}
+
 bool V3DocViewWin::saveSettings( lString32 filename )
 {
     crtrace log;
     if ( filename.empty() )
         filename = _settingsFileName;
-    if ( filename.empty() )
+    if ( filename.empty() ) {
+        reportSaveResult(false, false);
         return false;
+    }
     _settingsFileName = filename;
     log << "V3DocViewWin::saveSettings(" << filename << ")";
     LVStreamRef serialized = LVCreateMemoryStream(NULL, 0, false, LVOM_WRITE);
     bool saved = _props->saveToStream(serialized.get()) && LVWriteFileAtomic(filename, serialized);
     if (!saved)
         CRLog::error("Cannot save settings to %s", LCSTR(filename));
+    reportSaveResult(saved, false);
     return saved;
 }
 
@@ -665,6 +688,8 @@ void V3DocViewWin::applySettings()
 #endif
     _docview->propsApply( delta );
     _props = _newProps; // | _props;
+    // A settings-only change must repaint the reader after the menu closes.
+    setDirty();
     _wm->getScreen()->setFullUpdateInterval(_props->getIntDef(PROP_DISPLAY_FULL_UPDATE_INTERVAL, 1));
     setAccelerators( _wm->getAccTables().get(lString32("main"), _props) );
 }
