@@ -17,7 +17,7 @@ The **forum thread** is at [mobileread.com](http://www.mobileread.com/forums/sho
 
 ### PocketBook Touch HD 3 — firmware 6.11.2001
 
-[Download R5](https://github.com/dderugin/pocketbook-coolreader/releases/tag/touch-hd3-fw6-r5) · [Installation and build guide](README-touch-hd3.txt) · [Download page](https://dderugin.github.io/pocketbook-coolreader/)
+[Download R5](https://github.com/dderugin/pocketbook-coolreader/releases/tag/touch-hd3-fw6-r5) · [Installation and build guide](README-touch-hd3.txt) · [Download page](https://coolreader.nimbushub.eu/)
 
 This fork includes the firmware-6 compatibility fixes for **Touch HD 3 / PB632**.
 Revision 5 fixes the startup and first-page crashes. Book display and physical
