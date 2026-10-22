@@ -9,6 +9,54 @@ lString32 pbSkinFileName;
 lString32 openedCacheFile;
 lString32 currentCacheDir;
 DECL_DEF_CR_FONT_SIZES;
+static lvRect inkBounds(LVDrawBuf *buf) {
+    lvRect ink(buf->GetWidth(), buf->GetHeight(), 0, 0);
+    lUInt32 paper = buf->GetPixel(0, 0);
+    for (int y = 0; y < buf->GetHeight(); ++y)
+        for (int x = 0; x < buf->GetWidth(); ++x)
+            if (buf->GetPixel(x, y) != paper) {
+                if (x < ink.left) ink.left = x;
+                if (y < ink.top) ink.top = y;
+                if (x+1 > ink.right) ink.right = x+1;
+                if (y+1 > ink.bottom) ink.bottom = y+1;
+            }
+    return ink;
+}
+static int testMarginPainting() {
+    LVDocView margins(8);
+    margins.setDefaultFontFace(lString8("DejaVu Sans"));
+    margins.Resize(1072, 1448);
+    CRPropRef props = LVCreatePropsContainer();
+    props->setInt(PROP_STATUS_LINE, 2);
+    props->setInt(PROP_FONT_SIZE, 32);
+    props->setBool(PROP_FLOATING_PUNCTUATION, false);
+    props->setHex(PROP_BACKGROUND_COLOR, 0xffffff);
+    props->setHex(PROP_FONT_COLOR, 0);
+    const char *keys[] = {PROP_PAGE_MARGIN_LEFT, PROP_PAGE_MARGIN_TOP,
+                         PROP_PAGE_MARGIN_RIGHT, PROP_PAGE_MARGIN_BOTTOM};
+    for (int i = 0; i < 4; ++i) props->setInt(keys[i], 20);
+    margins.propsApply(props);
+    margins.setStyleSheet(lString8("body,p { display: block; margin: 0; padding: 0; text-indent: 0; text-align: left; }"));
+    std::string xml = "<FictionBook><body><section><p>";
+    for (int i = 0; i < 2000; ++i) xml += "Margin painting test. ";
+    xml += "</p></section></body></FictionBook>";
+    LVStreamRef stream = LVCreateMemoryStream(const_cast<char *>(xml.data()), xml.size(), true);
+    CHECK(margins.LoadDocument(stream, U"margins.fb2"));
+    margins.Render();
+    lvRect before = inkBounds(margins.getPageImage(0)->getDrawBuf());
+    // Match the frontend's old/new preferences delta, changing only margins.
+    CRPropRef changed = LVClonePropsContainer(props);
+    for (int i = 0; i < 4; ++i) changed->setInt(keys[i], 100);
+    margins.propsApply(props ^ changed);
+    lvRect after = inkBounds(margins.getPageImage(0)->getDrawBuf());
+    CHECK(after.left - before.left >= 75 && after.left - before.left <= 85);
+    CHECK(after.top - before.top == 80);
+    CHECK(after.right <= 1072-100 && after.bottom <= 1448-100);
+    CHECK(before.right > after.right && before.bottom > after.bottom);
+    CHECK(margins.getPageMargins() == lvRect(100,100,100,100));
+    puts("PASS: margin-only settings delta immediately changes all four painted page bounds");
+    return 0;
+}
 static int testRendering(const char *defaultsFile, const char *epubFile, const char *fb2Css) {
     LVDocView view(8);
     view.setDefaultFontFace(lString8("DejaVu Sans"));
@@ -49,6 +97,17 @@ static int testRendering(const char *defaultsFile, const char *epubFile, const c
     view.propsApply(preferences);
     view.Render();
     CHECK(view.getPageCount() > 0 && view.getFontSize() == defaults->getIntDef(PROP_FONT_SIZE));
+    CHECK(testMarginPainting() == 0);
+    // Every value exposed by the PocketBook margin menu must survive loading.
+    const int marginValues[] = {0,1,2,3,4,5,6,7,8,9,10,11,12,13,14,15,16,17,18,19,20,25,30,35,40,45,50,60,70,80,90,100,110,120,130,140,150,160,170,180,190,200,250,300};
+    const char *marginKeys[] = {PROP_PAGE_MARGIN_LEFT, PROP_PAGE_MARGIN_TOP,
+                                PROP_PAGE_MARGIN_RIGHT, PROP_PAGE_MARGIN_BOTTOM};
+    for (unsigned i = 0; i < sizeof(marginValues)/sizeof(marginValues[0]); ++i) {
+        CRPropRef margins = LVCreatePropsContainer();
+        for (int j = 0; j < 4; ++j) margins->setInt(marginKeys[j], marginValues[i]);
+        view.propsUpdateDefaults(margins);
+        for (int j = 0; j < 4; ++j) CHECK(margins->getIntDef(marginKeys[j]) == marginValues[i]);
+    }
     // Legacy PocketBook modes must keep the status line visible at Top (0)
     // and hidden at Off (2), both through settings and the direct key toggle.
     CHECK(defaults->getIntDef(PROP_STATUS_LINE, -1) == 0);

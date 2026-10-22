@@ -688,6 +688,8 @@ void V3DocViewWin::applySettings()
 #endif
     _docview->propsApply( delta );
     _props = _newProps; // | _props;
+    // A settings-only change must repaint the reader after the menu closes.
+    setDirty();
     _wm->getScreen()->setFullUpdateInterval(_props->getIntDef(PROP_DISPLAY_FULL_UPDATE_INTERVAL, 1));
     setAccelerators( _wm->getAccTables().get(lString32("main"), _props) );
 }

@@ -6701,11 +6701,20 @@ void LVDocView::propsUpdateDefaults(CRPropRef props) {
     props->setBoolDef(PROP_SHOW_POS_PERCENT, false);
     props->setBoolDef(PROP_STATUS_CHAPTER_MARKS, true);
 
+#if CR_POCKETBOOK == 1
+    // PocketBook's menu offers values omitted by the upstream choice list.
+    // Preserve every supported pixel value rather than silently resetting it.
+    props->limitValueMinMax(PROP_PAGE_MARGIN_TOP, 0, 300, 8);
+    props->limitValueMinMax(PROP_PAGE_MARGIN_BOTTOM, 0, 300, 8);
+    props->limitValueMinMax(PROP_PAGE_MARGIN_LEFT, 0, 300, 8);
+    props->limitValueMinMax(PROP_PAGE_MARGIN_RIGHT, 0, 300, 8);
+#else
     static int margin_options[] = {0, 1, 2, 3, 4, 5, 8, 9, 10, 11, 12, 13, 14, 15, 16, 20, 25, 30, 40, 50, 60, 80, 100, 130, 150, 200, 300};
     props->limitValueList(PROP_PAGE_MARGIN_TOP, margin_options, sizeof(margin_options)/sizeof(int), 6);
     props->limitValueList(PROP_PAGE_MARGIN_BOTTOM, margin_options, sizeof(margin_options)/sizeof(int), 6);
     props->limitValueList(PROP_PAGE_MARGIN_LEFT, margin_options, sizeof(margin_options)/sizeof(int), 6);
     props->limitValueList(PROP_PAGE_MARGIN_RIGHT, margin_options, sizeof(margin_options)/sizeof(int), 6);
+#endif
     static int rounded_corners_margin_options[] = {0, 5, 10, 15, 20, 30, 40, 50, 60, 70,80, 90, 100, 120, 140, 160};
     props->limitValueList(PROP_ROUNDED_CORNERS_MARGIN, rounded_corners_margin_options, sizeof(rounded_corners_margin_options)/sizeof(int), 0);
 

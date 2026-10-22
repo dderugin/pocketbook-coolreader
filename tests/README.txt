@@ -97,3 +97,10 @@ annotation text, across memory streams, files and ZIP members. Migrated history
 is serialized and reopened against the modern DOM. Invalid pointers leave
 history unchanged; metadata scans skip conversion and a failed modern rewind
 rolls back the migrated history and restores the requested rendering settings.
+
+Margin compatibility
+--------------------
+The document-render group checks every margin value offered by the PocketBook
+menu survives preference validation. It paints a long FB2 paragraph before and
+after applying a margin-only preferences delta, without an explicit second
+render, and checks all four text bounds and effective margins.
