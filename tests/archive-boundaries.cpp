@@ -7,6 +7,7 @@ lString16 pbSkinFileName, openedCacheFile, currentCacheDir;
 int main(int argc, char **argv) {
     CHECK(argc == 2);
     LVStreamFragment fragment(LVCreateStringStream(lString8("ABCDE")),1,2);
+    CHECK(fragment.GetMode() == LVOM_READ);
     char bytes[128] = {}; lvsize_t count = 99;
     CHECK(fragment.Read(bytes,4,&count) == LVERR_OK && count == 2 && !memcmp(bytes,"BC",2));
     CHECK(fragment.Read(bytes,4,&count) == LVERR_OK && count == 0);

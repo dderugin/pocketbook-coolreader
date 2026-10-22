@@ -694,6 +694,7 @@ public:
     LVStreamFragment( LVStreamRef stream, lvsize_t start, lvsize_t size )
         : m_stream(stream), m_start(start), m_size(size), m_pos(0)
     {
+        m_mode = LVOM_READ;
     }
     virtual bool Eof()
     {

@@ -3863,7 +3863,7 @@ void CRPbDictionaryView::translate(const lString16 &w)
             CRLog::trace("LookupWord(%s) returned %d", what.c_str(), _translateResult);
         }
 
-        if (_translateResult != 0 && (!word || !translation)) _translateResult = 0;
+        if (_translateResult != 0 && !word) _translateResult = 0;
         if (_translateResult != 0) {
 
             // Check if it's a translation redirection
