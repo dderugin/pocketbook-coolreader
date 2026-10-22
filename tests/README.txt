@@ -62,5 +62,6 @@ Packaging compares the installed defaults file with its repository source.
 
 The skin-language-symbol group also renders the settings menu with the PB631
 skin at Touch HD 3 portrait and landscape sizes. It checks that the header
-matches a menu row, the Back button responds throughout the full header-height
-square, the first item stays below it, and other menus retain their skin height.
+matches a menu row, the Back button responds throughout a full-height target
+three times as wide, touches outside it miss, the first item stays below it,
+and other menus retain their skin height.

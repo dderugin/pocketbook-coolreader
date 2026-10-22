@@ -1184,12 +1184,15 @@ void CRGUIWindowBase::drawTitleBar()
 
             lvRect touchRc = closeBtnRc;
             if (getSkinName() == L"#settings") {
-                // Keep the arrow at its native size, centred in a finger-sized
-                // square spanning the full settings header height.
+                // Keep the arrow at its native size, centred in a wide target
+                // spanning the full settings header height. Reserve caption space.
                 touchRc.top = titleRc.top;
                 touchRc.bottom = titleRc.bottom;
-                if (touchRc.width() < titleRc.height())
-                    touchRc.right = touchRc.left + titleRc.height();
+                int buttonWidth = titleRc.height() * 3;
+                if (buttonWidth > titleRc.width() / 2)
+                    buttonWidth = titleRc.width() / 2;
+                if (touchRc.width() < buttonWidth)
+                    touchRc.right = touchRc.left + buttonWidth;
                 int dx = (touchRc.width() - closeBtnRc.width()) / 2;
                 closeBtnRc.left += dx;
                 closeBtnRc.right += dx;

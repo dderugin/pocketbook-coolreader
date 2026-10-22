@@ -52,10 +52,14 @@ static int checkSettingsHeader(const char *skinFile) {
         CHECK(title.height() > 75 && client.top == title.bottom);
         menu.flush();
         CHECK(menu.backHit(title.left + 1, title.top + 1));
-        CHECK(menu.backHit(title.left + title.height() - 1, title.bottom - 1));
+        int backWidth = title.height() * 3;
+        CHECK(menu.backHit(title.left + backWidth - 1, title.top + 1));
+        CHECK(menu.backHit(title.left + backWidth - 1, title.bottom - 1));
+        CHECK(!menu.backHit(title.left + backWidth, title.top + 1));
         CHECK(!menu.backHit(title.left + 1, title.bottom));
-        printf("PASS: %s settings header %d px, rows %d px; full-height Back target\n",
-               rotated ? "landscape" : "portrait", title.height(), menu.getItemHeight());
+        printf("PASS: %s settings header %d px, rows %d px; Back target %d x %d px\n",
+               rotated ? "landscape" : "portrait", title.height(), menu.getItemHeight(),
+               backWidth, title.height());
     }
     menu.setSkinName(lString16("#main"));
     menu.reconfigure(CRGUI_CONFIGURE_FLAG_SCREEN_ORIENTATION);
