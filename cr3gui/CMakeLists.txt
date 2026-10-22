@@ -94,6 +94,7 @@ if(POCKETBOOK_FW6)
 endif()
 # Packaging alone strips a copy; keep the link output and its symbols intact.
 install(TARGETS cr3-pb.app RUNTIME DESTINATION system/bin)
+install(FILES ${CMAKE_SOURCE_DIR}/data/touch-hd3/cr3-defaults.ini DESTINATION system/share/cr3)
 install(FILES data/epub.css data/fb2.css data/htm.css data/rtf.css
     data/txt.css data/chm.css data/doc.css data/dict.css DESTINATION system/share/cr3)
 install(DIRECTORY data/hyph/ DESTINATION system/share/cr3/hyph

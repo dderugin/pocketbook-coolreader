@@ -2184,7 +2184,7 @@ protected:
 
                 if( newFontSize != currentFontSize ) {
                     main_win->getDocView()->setFontSize(newFontSize);
-
+                    main_win->getProps()->setInt(PROP_FONT_SIZE, main_win->getDocView()->getFontSize());
                     main_win->saveSettings(lString16::empty_str);
                 }
                 else {
@@ -4874,7 +4874,14 @@ int InitDoc(const char *exename, char *fileName)
             NULL
         };
         lString16 ini;
-        CRPropRef props = LVCreatePropsContainer();
+        // Packaged preferences are a fallback; user and book settings win.
+        // Keep this separate from cr3.ini so an upgrade never replaces it.
+        CRPropRef defaults = LVCreatePropsContainer();
+        LVStreamRef defaultsStream = LVOpenFileStream(
+            L""USERDATA"/share/cr3/cr3-defaults.ini", LVOM_READ);
+        if (!defaultsStream.isNull())
+            defaults->loadFromStream(defaultsStream.get());
+        CRPropRef props = LVClonePropsContainer(defaults);
         int bpp = 0;
 
         int fb2Pos = filename16.pos(lString16(L".fb2"));
@@ -5023,6 +5030,7 @@ int InitDoc(const char *exename, char *fileName)
                 main_win->loadCSS( lString16(USERDATA2"/share/cr3/" ) + lString16(css_file_name) );
         main_win->setBookmarkDir(lString16(FLASHDIR"/cr3_notes/"));
         CRLog::debug("Loading settings...");
+        main_win->getProps()->set(defaults);
         main_win->loadSettings( ini );
 
         int orient;
@@ -5165,6 +5173,7 @@ lString16 getPbModelNumber() {
 
 #ifdef POCKETBOOK_PRO
 void SetSaveStateTimer(){
+    if (exiting || !CRPocketBookDocView::instance) return;
     exiting = true;
     CRPocketBookDocView::instance->closing();
     exiting = false;
@@ -5341,7 +5350,8 @@ void exitStandByMode() {
     restartStandByTimer();
 }
 void restartStandByTimer() {
-
+    // CloseApp can synchronously destroy the document during an input event.
+    if (exiting || !CRPocketBookDocView::instance) return;
     CRPropRef props = CRPocketBookDocView::instance->getProps();
     int delay = props->getIntDef(PROP_DISPLAY_STANDBY, 5);
 
@@ -5635,6 +5645,9 @@ int main_handler(int type, int par1, int par2)
     case EVT_EXIT:
         exiting = true;
         stopStandByTimer();
+#ifdef POCKETBOOK_PRO
+        ClearTimer(SetSaveStateTimer);
+#endif
         if (CRPocketBookWindowManager::instance->getWindowCount() != 0)
             CRPocketBookWindowManager::instance->closeAllWindows();
         ShutdownCREngine();

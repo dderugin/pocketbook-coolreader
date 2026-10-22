@@ -553,6 +553,8 @@ void V3DocViewWin::closing()
 	_dict = NULL;
     _docview->savePosition();
     CRLog::trace("after docview->savePosition()");
+    _props->setInt(PROP_FONT_SIZE, _docview->getFontSize());
+    saveSettings(lString16::empty_str);
     saveHistory( lString16::empty_str, _props->getBoolDef( PROP_AUTOSAVE_BOOKMARKS, true ) );
 }
 
@@ -645,7 +647,10 @@ bool V3DocViewWin::saveSettings( lString16 filename )
     _settingsFileName = filename;
     log << "V3DocViewWin::saveSettings(" << filename << ")";
     LVStreamRef serialized = LVCreateMemoryStream(NULL, 0, false, LVOM_WRITE);
-    return _props->saveToStream(serialized.get()) && LVWriteFileAtomic(filename, serialized);
+    bool saved = _props->saveToStream(serialized.get()) && LVWriteFileAtomic(filename, serialized);
+    if (!saved)
+        CRLog::error("Cannot save settings to %s", LCSTR(filename));
+    return saved;
 }
 
 void V3DocViewWin::applySettings()

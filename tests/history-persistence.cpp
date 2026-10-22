@@ -58,6 +58,23 @@ int main(int argc, char **argv) {
     CHECK(!history.saveToStream(&failure));
     CRPropRef props = LVCreatePropsContainer(); props->setString("test", text);
     CHECK(!props->saveToStream(&failure));
+    CHECK(!props->saveToStream(readOnly.get()));
+    // Exercise the same serialization/atomic-save path as the settings UI.
+    LVStreamRef settings = LVCreateMemoryStream(NULL, 0, false, LVOM_WRITE);
+    CHECK(settings->GetMode() == LVOM_READWRITE);
+    props->setString("font.face.default", "PT Serif");
+    props->setInt("crengine.font.size", 32);
+    props->setInt("crengine.page.margin.left", 20);
+    CHECK(props->saveToStream(settings.get()));
+    lString16 config = Utf8ToUnicode(argv[1]) + lString16("/new-profile/cr3/cr3.ini");
+    CHECK(LVWriteFileAtomic(config, settings));
+    CRPropRef loaded = LVCreatePropsContainer();
+    LVStreamRef configStream = LVOpenFileStream(config.c_str(), LVOM_READ);
+    CHECK(!configStream.isNull() && loaded->loadFromStream(configStream.get()));
+    CHECK(loaded->getStringDef("test") == text);
+    CHECK(loaded->getStringDef("font.face.default") == lString16("PT Serif"));
+    CHECK(loaded->getIntDef("crengine.font.size") == 32);
+    CHECK(loaded->getIntDef("crengine.page.margin.left") == 20);
     lString16 file = Utf8ToUnicode(argv[1]) + lString16("/history-state");
     CHECK(LVWriteFileAtomic(file, LVCreateStringStream(lString8("old"))));
     CHECK(!LVWriteFileAtomic(file, LVStreamRef(new BadSource())));

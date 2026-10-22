@@ -47,3 +47,15 @@ It checks the tested runtime asset hashes, all compiled language catalogs,
 the unpacked contents of all four skins and both launchers. Generated ZIP
 metadata and translation binaries are not stored as duplicate source assets.
 Styles, dictionaries, hyphenation patterns and manuals live in cr3gui/data.
+
+Captured reading defaults
+-------------------------
+The document-render group also loads data/touch-hd3/cr3-defaults.ini, checks
+that font/layout validation retains the captured settings, and renders an FB2
+using the target firmware's DroidSans.ttf. It verifies that saved user font
+size and margins override packaged defaults while unspecified values survive.
+The history-persistence group saves properties through the UI's read/write
+memory-stream and atomic-file path, creates a new profile directory and reads
+back the font, size, margin and Unicode values. This reproduces the previously
+silent settings-save failure before the serializer fix.
+Packaging compares the installed defaults file with its repository source.

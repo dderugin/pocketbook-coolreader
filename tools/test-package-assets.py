@@ -30,7 +30,8 @@ for skin in ('default', 'pb62x', 'pb626fw5', 'pb631fw5'):
         for name in names:
             if archive.read(name) != (sources / name).read_bytes():
                 raise SystemExit(f'Skin asset differs: {skin}/{name}')
-for relative in ('applications/CoolReader.app', 'system/bin/cr3-pb.app'):
+for relative in ('applications/CoolReader.app', 'system/bin/cr3-pb.app',
+                 'system/share/cr3/cr3-defaults.ini'):
     if (stage / relative).read_bytes() != (root / 'data/touch-hd3' / Path(relative).name).read_bytes():
-        raise SystemExit(f'Launcher differs: {relative}')
-print(f'PASS: {len(expected)} runtime assets, {len(languages)} translations, 4 skins and launchers')
+        raise SystemExit(f'Packaged defaults or launcher differs: {relative}')
+print(f'PASS: {len(expected)} runtime assets, {len(languages)} translations, 4 skins, launchers and defaults')

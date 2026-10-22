@@ -10,6 +10,15 @@ verification fixes. New builds are candidates until tested on the reader;
 `build-info.json` records automated results separately from device validation.
 Other devices and firmware versions have not been verified by this fork.
 
+New installations use the reading preferences captured from the Touch HD 3:
+Droid Sans MTI Arabic at size 49, 100% line spacing, margins of 2 px on the
+left/top/bottom and 0 px on the right, and Russian/English hyphenation.
+All 154 preferences are stored in `data/touch-hd3/cr3-defaults.ini` and packaged
+as `system/share/cr3/cr3-defaults.ini`. The font comes with the target firmware.
+Saved user or book settings take precedence; upgrades preserve
+`system/config/cr3/cr3.ini`. Settings saves, pinch zoom and normal exit now
+retain preferences correctly.
+
 ## Install
 
 Extract the release ZIP and merge its **system** and **applications** folders

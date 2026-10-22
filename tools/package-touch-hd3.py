@@ -35,6 +35,7 @@ for stylesheet in sorted(assets.glob('*.css')):
 for directory in ('hyph', 'chn', 'manual'):
     shutil.copytree(assets / directory, share / directory)
 shutil.copy2(root / 'data/touch-hd3/devices.ini', share)
+shutil.copy2(root / 'data/touch-hd3/cr3-defaults.ini', share)
 for name in ('bin', 'skins', 'i18n', 'keymaps'):
     (share / name).mkdir(exist_ok=True)
 shutil.copy2(binary, share / 'bin/cr3-pb.app')
