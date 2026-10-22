@@ -82,7 +82,10 @@ Rebuild on the Ubuntu server
 Project: the extracted pocketbook-coolreader source directory
 Run: bash tools/build-touch-hd3.sh
 ARM regressions: python3 tools/test-touch-hd3.py (uses work/firmware runtime).
-Artifacts: dist/coolreader-touch-hd3-fw6.11.2001.zip and its .sha256 file.
+Artifacts: dist/coolreader-touch-hd3-fw6.11.2001-dev.zip and its .sha256 file.
+New builds default to revision dev; set CR3_REVISION for an explicit candidate.
+The build now gates packaging on seven ARM regressions; build-info.json binds
+the report to this binary and records physical-device validation as not performed.
 Intermediate files, SDK, host tools, build and verification logs are in work/.
 The script uses local host tools in work/host if present. A standard Linux
 build host needs cmake, make, zip, gettext and python3.

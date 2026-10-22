@@ -16,3 +16,5 @@ qtcreator-build
 
 /work/
 /dist/
+
+__pycache__/

@@ -15,7 +15,7 @@
 #include <cr3version.h>
 #include "cr3pocketbook.h"
 #include <inkview.h>
-#include <regex.h>
+#include "pbdictionary.h"
 #ifdef POCKETBOOK_FW6
 #include <signal.h>
 #include <sys/ucontext.h>
@@ -3417,7 +3417,7 @@ void CRPbDictionaryView::searchDictionary()
 {
     _searchPattern.clear();
 
-    strcpy(key_buffer, UnicodeToUtf8(lString16(_word)).c_str());
+    LVCopyUtf8(key_buffer, sizeof(key_buffer), UnicodeToUtf8(_word).c_str());
     // OpenKeyboard(const_cast<char *>("@Search"), key_buffer, KEY_BUFFER_LEN, 0, searchHandler);
     OpenCustomKeyboard(DICKEYBOARD, const_cast<char *>("@Search"), key_buffer, KEY_BUFFER_LEN, 0, searchHandler);
 }
@@ -3811,37 +3811,10 @@ lString8 CRPbDictionaryView::createArticle(const char *word, const char *transla
     return article;
 }
 
-#define CR_PB_DICT_REDIRECT_PREFIXES "to|of|see|from"
-lString16 CRPbDictionaryView::detectDictionaryRedirectFor(const char* translation) {
-
-    if( CRPocketBookDocView::instance->getProps()->getStringDef(PROP_POCKETBOOK_DICT) != lString16("Webster's 1913 Dictionary") ) {
-        return lString16("");
-    }
-
-    regex_t pregx;
-    regmatch_t pmatch[10];
-    int rule, i;
-    char tmpvalue[256];
-
-    static const char *regex_rules[2] = {
-        "^[\n\t ]+?\\([^\\)]+?\\)[\t ]+("CR_PB_DICT_REDIRECT_PREFIXES")[\t ]+([a-z]+)[\\. \t\n]+?$",
-        "^[\n\t ]+?\\([^\\)]+?\\)[\t ]+([a-z\\.]+[ ])?("CR_PB_DICT_REDIRECT_PREFIXES")[\t ]+([a-z]+)[\\. \n\t]+?$"
-        };
-
-    for( rule = 0; rule < 2; rule++ ) {
-        if( regcomp(&pregx, regex_rules[rule], REG_ICASE|REG_EXTENDED) == 0 ) {
-            if( regexec(&pregx, translation, 5, pmatch,0) == 0 ) {
-                for( i = 0 ; i < 5 && pmatch[i].rm_so!=-1 ; i++ );
-                if( i > 0 && pmatch[--i].rm_so!=-1 ) {
-                    memset(tmpvalue, 0, 256);
-                    strncpy(tmpvalue, &translation[pmatch[i].rm_so], pmatch[i].rm_eo-pmatch[i].rm_so);
-                    return lString16(tmpvalue);
-                }
-            }
-        }
-    }
-
-    return lString16("");
+lString16 CRPbDictionaryView::detectDictionaryRedirectFor(const char *translation) {
+    if (CRPocketBookDocView::instance->getProps()->getStringDef(PROP_POCKETBOOK_DICT)
+            != lString16("Webster's 1913 Dictionary")) return lString16();
+    return PbDictionary::redirectFor(translation);
 }
 
 void CRPbDictionaryView::translate(const lString16 &w)
@@ -3856,9 +3829,13 @@ void CRPbDictionaryView::translate(const lString16 &w)
         return;
     }
     _word = s16;
+    PbDictionary::RedirectChain redirects;
 
     CRLog::trace("CRPbDictionaryView::translate() start, _dictIndex = %d", _dictIndex);
     if (_dictIndex >= 0) {
+      for (;;) {
+        redirects.add(s16);
+        _word = s16;
         lString8 what = UnicodeToUtf8( s16 );
         char *word = NULL, *translation = NULL;
 
@@ -3886,20 +3863,14 @@ void CRPbDictionaryView::translate(const lString16 &w)
             CRLog::trace("LookupWord(%s) returned %d", what.c_str(), _translateResult);
         }
 
+        if (_translateResult != 0 && (!word || !translation)) _translateResult = 0;
         if (_translateResult != 0) {
 
             // Check if it's a translation redirection
             lString16 redirect = detectDictionaryRedirectFor(translation);
-            if( !redirect.empty() ) {
-                lString16 tmp = redirect;
-                tmp.lowercase();
-                s16.lowercase();
-
-                // Avoid infinite loops
-                if( tmp != s16 ) {
-                    translate(redirect);
-                    return;
-                }
+            if (redirects.canFollow(redirect)) {
+                s16 = redirect;
+                continue;
             }
 
             if (_translateResult == 1) {
@@ -3916,6 +3887,8 @@ void CRPbDictionaryView::translate(const lString16 &w)
             _newWord = _newTranslation = NULL;
             body << TR("@Word_not_found");
         }
+        break;
+      }
     } else if (_dictCount <= 0) {
         body << TR("@Dic_not_installed");
     } else {

@@ -704,22 +704,29 @@ public:
         return m_size;
     }
 
-    virtual lverror_t Seek(lvoffset_t pos, lvseek_origin_t origin, lvpos_t* newPos)
+    virtual lverror_t Seek(lvoffset_t offset, lvseek_origin_t origin, lvpos_t* newPos)
     {
-        if ( origin==LVSEEK_SET )
-            pos += m_start;
-        else if ( origin==LVSEEK_END ) {
-            origin = LVSEEK_SET;
-            pos = m_start + m_size;
+        lvpos_t base;
+        if (origin == LVSEEK_SET) base = 0;
+        else if (origin == LVSEEK_CUR) base = m_pos;
+        else if (origin == LVSEEK_END) base = m_size;
+        else return LVERR_FAIL;
+        // Avoid negating the minimum signed offset or overflowing position arithmetic.
+        lvpos_t target;
+        if (offset < 0) {
+            lvpos_t distance = static_cast<lvpos_t>(-(offset + 1)) + 1;
+            if (distance > base) return LVERR_FAIL;
+            target = base - distance;
+        } else {
+            if (base > m_size || static_cast<lvpos_t>(offset) > m_size - base)
+                return LVERR_FAIL;
+            target = base + offset;
         }
-        lverror_t res = m_stream->Seek( pos, origin, &m_pos );
-        if (res == LVERR_OK)
-            m_pos -= m_start;
-        if (newPos)
-        {
-            *newPos =  m_pos;
-        }
-        return res;
+        if (target > m_size || m_start + target < m_start) return LVERR_FAIL;
+        // Every read positions the backing stream; fragment seeking has no side effects.
+        m_pos = target;
+        if (newPos) *newPos = target;
+        return LVERR_OK;
     }
     virtual lverror_t Write(const void*, lvsize_t, lvsize_t*)
     {
@@ -727,6 +734,10 @@ public:
     }
     virtual lverror_t Read(void* buf, lvsize_t size, lvsize_t* pBytesRead)
     {
+        if (pBytesRead) *pBytesRead = 0;
+        if (m_pos > m_size || m_start + m_pos < m_start) return LVERR_FAIL;
+        if (size > m_size - m_pos) size = m_size - m_pos;
+        if (!size) return LVERR_OK;
         lvsize_t bytesRead = 0;
         lvpos_t p;
         lverror_t res = m_stream->Seek( m_pos+m_start, LVSEEK_SET, &p );
@@ -834,6 +845,9 @@ bool LVDeleteDirectory( lString8 filename );
 bool LVRenameFile(lString16 oldname, lString16 newname);
 /// rename file
 bool LVRenameFile(lString8 oldname, lString8 newname);
+
+/// Atomically replace a file from a serialized stream; retain the previous file as .bak.
+bool LVWriteFileAtomic(lString16 filename, LVStreamRef contents, bool backup = true);
 
 /// copies content of in stream to out stream
 lvsize_t LVPumpStream( LVStreamRef out, LVStreamRef in );

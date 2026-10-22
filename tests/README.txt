@@ -20,3 +20,22 @@ Run all current ARM regressions after building:
 python3 tools/test-touch-hd3.py
 This also checks absent CSS ancestors/null nodes, skin language selection
 (including the Chinese font fallback), and startup/Cyrillic FB2 layout.
+
+Reliability review regressions
+------------------------------
+The build script now runs seven ARM/QEMU regressions before packaging. The new
+cases exercise dictionary UTF-8 buffer boundaries and redirect guards; XML
+history/bookmark round trips, failed and short writes, atomic replacement and
+backup retention; bounded archive fragments and UTF-8/legacy ZIP entry names,
+including stored/deflated data-descriptor entries.
+
+CR3_BUILD_DIR can select a separate build directory. Reports are written to
+<build>/test-results.json and bind the tests to the staged binary SHA-256,
+source commit/content/dirty state and compiler flags. A failed run removes the
+old report. tools/test-build-metadata.py checks that failed/missing/stale test
+results cannot be reused. No automated report claims physical-reader testing.
+
+The default package revision is dev. Set CR3_REVISION explicitly to label a new
+candidate. Link outputs stay unstripped; debug information is saved separately,
+and a stripped staging copy with a GNU debug link goes into the ZIP. Repeating
+the build without source changes must retain useful debug sections.

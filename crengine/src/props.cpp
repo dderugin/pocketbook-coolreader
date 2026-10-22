@@ -631,8 +631,7 @@ bool CRPropAccessor::saveToStream( LVStream * targetStream )
     for ( int i=0; i<getCount(); i++ ) {
         *stream << getPath() << getName(i) << "=" << addBackslashChars(UnicodeToUtf8(getValue(i))) << "\r\n";
     }
-    LVPumpStream( targetStream, stream );
-    return true;
+    return LVPumpStream(targetStream, stream) == stream->GetSize();
 }
 
 //============================================================================

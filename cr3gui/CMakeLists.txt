@@ -318,10 +318,7 @@ elseif (${GUI} STREQUAL CRGUI_PB)
         set_property(TARGET cr3-pb.app APPEND_STRING PROPERTY LINK_FLAGS
                      " -Wl,--exclude-libs,ALL")
     endif()
-    if (DEFINED CMAKE_STRIP)
-       MESSAGE("Strip command:  ${CMAKE_STRIP} ${CMAKE_BINARY_DIR}/cr3gui/cr3-pb.app" )
-       EXECUTE_PROCESS( COMMAND ${CMAKE_STRIP} ${CMAKE_BINARY_DIR}/cr3gui/cr3-pb.app )
-    endif (DEFINED CMAKE_STRIP)
+    # Keep the link output intact; packaging strips only its own copy.
     INSTALL( TARGETS cr3-pb.app RUNTIME DESTINATION ${CR3_BIN_DESTINATION} )
 else()
     ADD_EXECUTABLE(cr3 ${CR3_SOURCES})
