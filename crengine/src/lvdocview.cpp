@@ -6692,7 +6692,11 @@ void LVDocView::propsUpdateDefaults(CRPropRef props) {
     props->setColorDef(PROP_HIGHLIGHT_BOOKMARK_COLOR_COMMENT, 0xA08020); // yellow
     props->setColorDef(PROP_HIGHLIGHT_BOOKMARK_COLOR_CORRECTION, 0xA04040); // red
 
+#if CR_POCKETBOOK == 1
+    props->limitValueMinMax(PROP_STATUS_LINE, 0, 2, 0); // PocketBook: Top
+#else
     props->limitValueMinMax(PROP_STATUS_LINE, 0, 2, 1);
+#endif
     props->setBoolDef(PROP_SHOW_TIME, true);
     props->setBoolDef(PROP_SHOW_TITLE, true);
     props->setBoolDef(PROP_SHOW_TIME_12HOURS, false);
@@ -6763,6 +6767,12 @@ void LVDocView::setStatusMode(int pos, bool showClock, bool showTitle,
 	CRLog::debug("LVDocView::setStatusMode(%d, %s %s %s %s)", pos,
 			showClock ? "clock" : "", showTitle ? "title" : "",
 			showBattery ? "battery" : "", showChapterMarks ? "marks" : "");
+#if CR_POCKETBOOK == 1
+    // PocketBook settings and key bindings use 0=Top, 1=Bottom, 2=Off.
+    // Keep saved preferences compatible with the upstream position enum.
+    pos = pos == 0 ? PAGE_HEADER_POS_TOP
+                  : pos == 1 ? PAGE_HEADER_POS_BOTTOM : PAGE_HEADER_POS_NONE;
+#endif
     setPageHeaderPosition(pos);
     setPageHeaderInfo(
         (showPageNumber ? PGHDR_PAGE_NUMBER : 0)
