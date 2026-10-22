@@ -55,6 +55,17 @@ shutil.copy2(root / 'data/touch-hd3/CoolReader.app', apps / 'CoolReader.app')
 shutil.copy2(root / 'data/touch-hd3/Welcome.fb2', share / 'Welcome.fb2')
 launcher.chmod(0o755)
 shutil.copy2(root / 'LICENSE', stage / 'LICENSE')
+dependencies = json.loads((root / 'thirdparty/versions.json').read_text())
+licenses = stage / 'licenses'
+licenses.mkdir()
+shutil.copy2(root / 'thirdparty/README.txt', licenses / 'README.txt')
+shutil.copy2(root / 'thirdparty/versions.json', licenses / 'versions.json')
+for dependency in dependencies['bundled']:
+    for name in dependency['licenses']:
+        destination = licenses / dependency['directory'] / name
+        destination.parent.mkdir(parents=True, exist_ok=True)
+        shutil.copy2(root / 'thirdparty' / dependency['directory'] / name, destination)
+
 (stage / 'README-touch-hd3.txt').write_text(
     f"Candidate revision: {args.revision}\nBinary SHA-256: {sha256(binary)}\n"
     "Automated ARM tests passed. This candidate has NOT been tested on a physical reader.\n"
@@ -70,6 +81,7 @@ manifest = {
     'target_firmware': 'U632.6.11.2001',
     'revision': args.revision,
     'source': source_metadata(root),
+    'dependencies': dependencies,
     'compiler': subprocess.check_output([str(compiler), '--version'], text=True).splitlines()[0],
     'build_flags': (build / 'crengine/CMakeFiles/crengine.dir/flags.make').read_text(),
     'binary_sha256': sha256(binary),

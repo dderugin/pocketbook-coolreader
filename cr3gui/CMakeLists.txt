@@ -62,11 +62,7 @@ if(ENABLE_PB_DB_STATE)
         list(APPEND EXTRA_LIBS dl)
     endif()
 endif()
-if(POCKETBOOK_EMU_GTK)
-    find_package(GTK2 REQUIRED)
-    find_package(CURL REQUIRED)
-    list(APPEND EXTRA_LIBS ${GTK2_LIBRARIES} ${CURL_LIBRARIES})
-endif()
+
 
 find_program(ZIP_EXECUTABLE zip)
 if(NOT ZIP_EXECUTABLE)
@@ -86,10 +82,11 @@ foreach(skin ${CR3_SKINS})
 endforeach()
 
 add_executable(cr3-pb.app ${CR3_SOURCES})
+add_dependencies(cr3-pb.app jpeg_external curl_external)
 target_link_libraries(cr3-pb.app crengine tinydict ${EXTRA_LIBS} ${STD_LIBS})
 if(POCKETBOOK_FW6)
     target_link_libraries(cr3-pb.app m)
-    # InkView must bind its own FreeType/JPEG rather than the engine's copies.
+    # InkView must bind its firmware libraries rather than our private copies.
     set_property(TARGET cr3-pb.app APPEND_STRING PROPERTY LINK_FLAGS " -Wl,--exclude-libs,ALL")
 endif()
 # Packaging alone strips a copy; keep the link output and its symbols intact.

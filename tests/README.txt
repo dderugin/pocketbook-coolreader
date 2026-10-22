@@ -23,7 +23,7 @@ This also checks absent CSS ancestors/null nodes, skin language selection
 
 Reliability review regressions
 ------------------------------
-The build script now runs eight ARM/QEMU regressions before packaging. The new
+The build script now runs ten ARM/QEMU regressions before packaging. The new
 cases exercise dictionary UTF-8 buffer boundaries and redirect guards; XML
 history/bookmark round trips, failed and short writes, atomic replacement and
 backup retention; bounded archive fragments and UTF-8/legacy ZIP entry names,
@@ -67,3 +67,16 @@ three times as wide, touches outside it miss, the first item stays below it,
 and other menus retain their skin height.
 It also checks pressed feedback and exact normal-state restoration after release,
 and saves portrait/landscape header previews in <build>/arm-regressions/*.pgm.
+
+Dependency upgrades
+-------------------
+The dependency-compatibility group checks runtime versions and decodes baseline,
+progressive and grayscale JPEG plus RGBA PNG through the engine's custom stream
+adapters. Existing archive/history groups exercise the upgraded zlib paths.
+The web-tls group uses a temporary local HTTPS server and two ephemeral CAs.
+It verifies text/binary downloads, rejection of untrusted certificates and wrong
+hostnames, blocked file:// redirects, failed output creation and curl callback
+byte counts. OpenSSL CLI is required to generate the local test certificates.
+Neither TLS tests nor the application build require access to public servers.
+All tests link the same private archives as the application, using the generated
+dependency-link.json. Firmware library fallbacks cannot satisfy version checks.

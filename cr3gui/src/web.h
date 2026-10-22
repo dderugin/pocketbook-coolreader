@@ -16,7 +16,7 @@ class web
 protected:    // User declarations
     static char errorBuffer[CURL_ERROR_SIZE];
     static string buffer;
-    static int writer(char *data, size_t size, size_t nmemb, string *buffer);
+    static size_t writer(char *data, size_t size, size_t nmemb, string *buffer);
     static size_t writerBinary(void *ptr, size_t size, size_t nmemb, FILE *stream);
     static string easycurl(const string &url, bool post, const string &postparamstring);
     static bool easycurlBinary(const string &url, bool post, const string &postparamstring, const string &outfilename);
