@@ -19,7 +19,7 @@ bool CRTocMenu::onCommand( int command, int params )
 CRTocMenu::CRTocMenu( CRGUIWindowManager * wm, CRPropRef newProps, int id,
     CRGUIAcceleratorTableRef menuAccelerators, lvRect &rc, tocentry *tocItems,
     int length, int currentPage )
-: CRFullScreenMenu( wm, id, lString16(_("Contents")), 8, rc ),
+: CRFullScreenMenu( wm, id, lString32(_("Contents")), 8, rc ),
   props( newProps ),
   _menuAccelerators( menuAccelerators ), _menuItemId(mm_TouchTOC)
 {
@@ -29,7 +29,7 @@ CRTocMenu::CRTocMenu( CRGUIWindowManager * wm, CRPropRef newProps, int id,
         forcePartialBwUpdates = true;
     }
 
-    setSkinName(L"#touch-toc");
+    setSkinName(U"#touch-toc");
 
     _fullscreen = true;
 
@@ -56,19 +56,19 @@ CRTocMenu::CRTocMenu( CRGUIWindowManager * wm, CRPropRef newProps, int id,
 
         for (int i = 0; i < length; i++) {
 
-            lString16 text(tocItems[i].text);
+            lString32 text(tocItems[i].text);
 
             // Prepend page number
-            // text = L"[" + lString16::itoa(tocItems[i].position) + L"] " + text;
+            // text = U"[" + lString32::itoa(tocItems[i].position) + U"] " + text;
 
             // Mark current chapter
             if( _selectedItem == i ) {
-                text = L">  " + text;
+                text = U">  " + text;
             }
 
             // Indent level
             for( int level = tocItems[i].level; level > 1; level-- ) {
-                text = L"     " + text;
+                text = U"     " + text;
             }
 
             mainMenu->addItem(new CRMenuItem(
@@ -77,7 +77,7 @@ CRTocMenu::CRTocMenu( CRGUIWindowManager * wm, CRPropRef newProps, int id,
                 UnicodeToUtf8(text).c_str(),
                 LVImageSourceRef(),
                 LVFontRef()/*,
-                lString16::itoa(tocItems[i].position).c_str()*/
+                lString32::itoa(tocItems[i].position).c_str()*/
                 ));
         }
     }

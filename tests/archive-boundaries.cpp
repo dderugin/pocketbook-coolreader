@@ -1,9 +1,10 @@
 #include "crengine.h"
+#include "lvstreamfragment.h"
 #include "lvutf8.h"
 #include "testutil.h"
 #include <cstring>
 #include <limits>
-lString16 pbSkinFileName, openedCacheFile, currentCacheDir;
+lString32 pbSkinFileName, openedCacheFile, currentCacheDir;
 int main(int argc, char **argv) {
     CHECK(argc == 2);
     LVStreamFragment fragment(LVCreateStringStream(lString8("ABCDE")),1,2);
@@ -21,15 +22,15 @@ int main(int argc, char **argv) {
     CHECK(empty.Read(bytes,1,&count) == LVERR_OK && count == 0);
     const char *archives[] = {"utf8-stored.zip", "utf8-deflated.zip", "descriptor-stored.zip", "descriptor-deflated.zip", "legacy.zip", "ascii.zip"};
     for (int i = 0; i < 6; ++i) {
-        lString16 file = Utf8ToUnicode(argv[1]) + lString16("/") + lString16(archives[i]);
+        lString32 file = Utf8ToUnicode(argv[1]) + lString32("/") + lString32(archives[i]);
         LVContainerRef arc = LVOpenArchieve(LVOpenFileStream(file.c_str(),LVOM_READ)); CHECK(!arc.isNull());
-        lString16 name = i < 2 ? Utf8ToUnicode("Тест/章节-é.xhtml") : i == 4 ? Utf8ToUnicode("Тест.xhtml") : lString16("chapter.xhtml");
+        lString32 name = i < 2 ? Utf8ToUnicode("Тест/章节-é.xhtml") : i == 4 ? Utf8ToUnicode("Тест.xhtml") : lString32("chapter.xhtml");
         LVStreamRef entry = arc->OpenStream(name.c_str(),LVOM_READ); CHECK(!entry.isNull());
         memset(bytes,0,sizeof(bytes)); count=0;
         CHECK(entry->Read(bytes,sizeof(bytes)-1,&count) == LVERR_OK);
         CHECK(count == 7 && !memcmp(bytes,"payload",7));
     }
-    lString16 invalid = Utf8ToUnicode(argv[1]) + lString16("/invalid-utf8.zip");
+    lString32 invalid = Utf8ToUnicode(argv[1]) + lString32("/invalid-utf8.zip");
     CHECK(LVOpenArchieve(LVOpenFileStream(invalid.c_str(),LVOM_READ)).isNull());
     puts("PASS: fragment bounds/seeks, UTF-8/legacy ZIP names and data descriptors");
 }

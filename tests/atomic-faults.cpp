@@ -4,8 +4,8 @@
 #include <signal.h>
 #include <string>
 #include <cstdio>
-lString16 pbSkinFileName, openedCacheFile, currentCacheDir;
-static lString8 readFile(const lString16 &path) {
+lString32 pbSkinFileName, openedCacheFile, currentCacheDir;
+static lString8 readFile(const lString32 &path) {
     LVStreamRef stream = LVOpenFileStream(path.c_str(),LVOM_READ);
     if (stream.isNull()) return lString8();
     char bytes[32]={}; lvsize_t size=0;
@@ -13,7 +13,7 @@ static lString8 readFile(const lString16 &path) {
 }
 int main(int argc,char **argv) {
     CHECK(argc >= 2);
-    lString16 path=Utf8ToUnicode(argv[1])+lString16("/fault-state");
+    lString32 path=Utf8ToUnicode(argv[1])+lString32("/fault-state");
     // Seed without the atomic helper: the fsync-failure subprocess injects EIO.
     FILE *seed=fopen(UnicodeToUtf8(path).c_str(),"wb"); CHECK(seed);
     CHECK(fwrite("old",1,3,seed)==3); CHECK(fclose(seed)==0);

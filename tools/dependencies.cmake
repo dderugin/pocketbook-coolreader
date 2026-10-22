@@ -96,6 +96,8 @@ add_dependencies(libcurl_static curl_external)
 set(CURL_LIBRARIES libcurl_static)
 set(CURL_INCLUDE_DIRS ${CMAKE_SOURCE_DIR}/thirdparty/curl/include)
 
+add_subdirectory(thirdparty/qimagescale)
+
 # The independent regression programs use the same link inputs as the app.
 file(GENERATE OUTPUT ${CMAKE_BINARY_DIR}/dependency-link.json CONTENT
-  "{\"archives\":[\"$<TARGET_FILE:jpeg>\",\"$<TARGET_FILE:freetype>\",\"$<TARGET_FILE:png_static>\",\"$<TARGET_FILE:zlibstatic>\",\"$<TARGET_FILE:libcurl_static>\"],\"runtime\":[\"ssl\",\"crypto\",\"bz2\",\"pthread\",\"dl\",\"m\"]}\n")
+  "{\"archives\":[\"$<TARGET_FILE:jpeg>\",\"$<TARGET_FILE:freetype>\",\"$<TARGET_FILE:png_static>\",\"$<TARGET_FILE:zlibstatic>\",\"$<TARGET_FILE:libcurl_static>\",\"$<TARGET_FILE:qimagescale>\"],\"runtime\":[\"ssl\",\"crypto\",\"bz2\",\"pthread\",\"dl\",\"m\"]}\n")

@@ -21,8 +21,8 @@ public:
     ~RedirectPatterns() {
         for (int i = 0; i < 2; ++i) if (valid[i]) regfree(&patterns[i]);
     }
-    lString16 find(const char *translation) const {
-        if (!translation) return lString16();
+    lString32 find(const char *translation) const {
+        if (!translation) return lString32();
         size_t length = strlen(translation);
         for (int i = 0; i < 2; ++i) {
             regmatch_t matches[5];
@@ -32,28 +32,28 @@ public:
             if (first >= 0 && last > first && static_cast<size_t>(last) <= length)
                 return Utf8ToUnicode(lString8(translation + first, last - first));
         }
-        return lString16();
+        return lString32();
     }
 private:
     RedirectPatterns(const RedirectPatterns &);
     RedirectPatterns &operator=(const RedirectPatterns &);
 };
-inline lString16 redirectFor(const char *translation) {
+inline lString32 redirectFor(const char *translation) {
     static RedirectPatterns patterns;
     return patterns.find(translation);
 }
 
 class RedirectChain {
     std::set<std::string> visited;
-    static std::string key(lString16 word) {
+    static std::string key(lString32 word) {
         word.lowercase();
         return UnicodeToUtf8(word).c_str();
     }
 public:
-    bool canFollow(const lString16 &word) const {
+    bool canFollow(const lString32 &word) const {
         return !word.empty() && visited.size() < 16 && !visited.count(key(word));
     }
-    void add(const lString16 &word) { visited.insert(key(word)); }
+    void add(const lString32 &word) { visited.insert(key(word)); }
 };
 }
 #endif

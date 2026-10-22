@@ -2,6 +2,7 @@
 """Run ARM regressions using the configured build and extracted firmware runtime."""
 from pathlib import Path
 import argparse, datetime, io, json, os, re, shlex, subprocess, zipfile
+import struct, zlib
 import http.server, ssl, threading
 from build_metadata import sha256, source_metadata
 root = Path(__file__).resolve().parent.parent
@@ -51,6 +52,18 @@ with zipfile.ZipFile(legacy, 'w') as z:
 # Replace a UTF-8 character with an invalid leading byte, preserving header lengths.
 bad = (out / 'utf8-stored.zip').read_bytes().replace('Т'.encode(), b'\xc0\x80')
 (out / 'invalid-utf8.zip').write_bytes(bad)
+# A small EPUB exercises the new parser, CSS and image/page-painting path.
+def png_chunk(kind, data):
+    return struct.pack('!I', len(data)) + kind + data + struct.pack('!I', zlib.crc32(kind + data) & 0xffffffff)
+pixel = b'\x89PNG\r\n\x1a\n' + png_chunk(b'IHDR', struct.pack('!2I5B', 1, 1, 8, 2, 0, 0, 0)) + png_chunk(b'IDAT', zlib.compress(b'\x00\xff\x00\x00')) + png_chunk(b'IEND', b'')
+epub = out / 'regression-章节.epub'
+with zipfile.ZipFile(epub, 'w', zipfile.ZIP_DEFLATED) as book:
+    book.writestr('mimetype', 'application/epub+zip', compress_type=zipfile.ZIP_STORED)
+    book.writestr('META-INF/container.xml', '<container version="1.0" xmlns="urn:oasis:names:tc:opendocument:xmlns:container"><rootfiles><rootfile full-path="OPS/content.opf" media-type="application/oebps-package+xml"/></rootfiles></container>')
+    book.writestr('OPS/content.opf', '<package version="2.0" unique-identifier="id" xmlns="http://www.idpf.org/2007/opf"><metadata xmlns:dc="http://purl.org/dc/elements/1.1/"><dc:title>EPUB regression</dc:title><dc:language>ru</dc:language><dc:identifier id="id">regression</dc:identifier></metadata><manifest><item id="chapter" href="chapter.xhtml" media-type="application/xhtml+xml"/><item id="ncx" href="toc.ncx" media-type="application/x-dtbncx+xml"/><item id="image" href="pixel.png" media-type="image/png"/></manifest><spine toc="ncx"><itemref idref="chapter"/></spine></package>')
+    book.writestr('OPS/toc.ncx', '<ncx version="2005-1" xmlns="http://www.daisy.org/z3986/2005/ncx/"><head/><docTitle><text>EPUB regression</text></docTitle><navMap><navPoint id="chapter" playOrder="1"><navLabel><text>Chapter</text></navLabel><content src="chapter.xhtml"/></navPoint></navMap></ncx>')
+    book.writestr('OPS/chapter.xhtml', '<html xmlns="http://www.w3.org/1999/xhtml"><head><title>Chapter</title><style>p { text-indent: 1em; color: #111; }</style></head><body><h1>Проверка EPUB</h1><p>Привет! Unicode 😀.</p><img src="pixel.png" width="16" height="16"/>' + '<p>Paragraph layout and page rendering.</p>' * 40 + '</body></html>')
+    book.writestr('OPS/pixel.png', pixel)
 # A private local CA makes HTTPS checks independent of the public network.
 class TLSHandler(http.server.BaseHTTPRequestHandler):
     protocol_version = 'HTTP/1.1'
@@ -97,7 +110,7 @@ for name, sources, engine, arguments in [
     ('reference-initialization', ['tests/lvref-static-global.cpp', 'tests/lvref-static-sentinel.cpp'], False, []),
     ('css-null-ancestor', ['tests/css-selector-null-ancestor.cpp'], True, []),
     ('skin-language-symbol', ['tests/skin-language-symbol.cpp'], True, [root / 'work/firmware/ebrmain/cramfs/fonts/DejaVuSans.ttf', root / 'work/firmware/ebrmain/cramfs/fonts/DejaVuSans-Bold.ttf', build / 'cr3gui/pb631fw5.cr3skin', out]),
-    ('document-render', ['tests/document-render-startup.cpp'], True, [root / 'work/firmware/ebrmain/cramfs/fonts/DejaVuSans.ttf', root / 'work/firmware/ebrmain/cramfs/fonts/DejaVuSans-Bold.ttf', root / 'work/firmware/ebrmain/cramfs/fonts/DroidSans.ttf', root / 'data/touch-hd3/cr3-defaults.ini', root / 'cr3gui/data/hyph/']),
+    ('document-render', ['tests/document-render-startup.cpp'], True, [root / 'work/firmware/ebrmain/cramfs/fonts/DejaVuSans.ttf', root / 'work/firmware/ebrmain/cramfs/fonts/DejaVuSans-Bold.ttf', root / 'work/firmware/ebrmain/cramfs/fonts/DroidSans.ttf', root / 'data/touch-hd3/cr3-defaults.ini', root / 'cr3gui/data/hyph/', epub, root / 'cr3gui/data/fb2.css']),
     ('dependency-compatibility', ['tests/dependency-compatibility.cpp'], True, [out]),
     ('web-tls', ['tests/web-tls.cpp', 'cr3gui/src/web.cpp'], True, [tls_url, out / 'trusted.crt', out / 'untrusted.crt', out]),
     ('dictionary-safety', ['tests/dictionary-safety.cpp'], True, []),

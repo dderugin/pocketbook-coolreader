@@ -60,6 +60,8 @@ licenses = stage / 'licenses'
 licenses.mkdir()
 shutil.copy2(root / 'thirdparty/README.txt', licenses / 'README.txt')
 shutil.copy2(root / 'thirdparty/versions.json', licenses / 'versions.json')
+(licenses / 'crengine').mkdir()
+shutil.copy2(root / 'crengine/xxhash-LICENSE.txt', licenses / 'crengine/xxhash-LICENSE.txt')
 for dependency in dependencies['bundled']:
     for name in dependency['licenses']:
         destination = licenses / dependency['directory'] / name
@@ -82,6 +84,7 @@ manifest = {
     'revision': args.revision,
     'source': source_metadata(root),
     'dependencies': dependencies,
+    'engine': json.loads((root / 'crengine/UPSTREAM.json').read_text()),
     'compiler': subprocess.check_output([str(compiler), '--version'], text=True).splitlines()[0],
     'build_flags': (build / 'crengine/CMakeFiles/crengine.dir/flags.make').read_text(),
     'binary_sha256': sha256(binary),

@@ -8,10 +8,10 @@
 
 // This is the application's language string. Firmware exports currentLang()
 // as a function, so skin code must never import that symbol as a string.
-lString16 crCurrentLang;
-lString16 openedCacheFile;
-lString16 currentCacheDir;
-lString16 pbSkinFileName;
+lString32 crCurrentLang;
+lString32 openedCacheFile;
+lString32 currentCacheDir;
+lString32 pbSkinFileName;
 
 class TouchScreen : public CRGUIScreenBase {
 public:
@@ -25,12 +25,12 @@ public:
 
 class SettingsMenu : public CRMenu {
 public:
-    SettingsMenu(CRGUIWindowManager *wm) : CRMenu(wm, NULL, 1, lString16("Settings"),
+    SettingsMenu(CRGUIWindowManager *wm) : CRMenu(wm, NULL, 1, lString32("Settings"),
             LVImageSourceRef(), LVFontRef(), LVFontRef()) {
         setFullscreen(true);
-        setSkinName(lString16("#settings"));
+        setSkinName(lString32("#settings"));
         for (int i = 0; i < 15; ++i)
-            addItem(new CRMenuItem(this, i + 10, lString16("Reading preference"),
+            addItem(new CRMenuItem(this, i + 10, lString32("Reading preference"),
                                   LVImageSourceRef(), LVFontRef()));
     }
     bool backHit(int x, int y) {
@@ -52,7 +52,7 @@ public:
 static int checkSettingsHeader(const char *skinFile, const char *previewDirectory) {
     TouchScreen screen;
     CRGUIWindowManager wm(&screen);
-    CHECK(wm.loadSkin(lString16(skinFile)));
+    CHECK(wm.loadSkin(lString32(skinFile)));
     SettingsMenu menu(&wm);
     for (int rotated = 0; rotated < 2; ++rotated) {
         wm.reconfigure(rotated ? 1448 : 1072, rotated ? 1072 : 1448,
@@ -94,7 +94,7 @@ static int checkSettingsHeader(const char *skinFile, const char *previewDirector
                rotated ? "landscape" : "portrait", title.height(), menu.getItemHeight(),
                backWidth, title.height());
     }
-    menu.setSkinName(lString16("#main"));
+    menu.setSkinName(lString32("#main"));
     menu.reconfigure(CRGUI_CONFIGURE_FLAG_SCREEN_ORIENTATION);
     lvRect title;
     CHECK(menu.getTitleRect(title) && title.height() == 75);
@@ -104,16 +104,16 @@ static int checkSettingsHeader(const char *skinFile, const char *previewDirector
 int main(int argc, char **argv) {
     CHECK(argc >= 5);
     InitFontManager(lString8());
-    crCurrentLang = lString16("en");
+    crCurrentLang = lString32("en");
     {
         CRRectSkin skin;
-        skin.setFontFace(lString16("DejaVu Sans"));
+        skin.setFontFace(lString32("DejaVu Sans"));
         if (skin.getFontFace() != "DejaVu Sans") return 1;
-        crCurrentLang = lString16("zh");
-        skin.setFontFace(lString16("DejaVu Sans"));
+        crCurrentLang = lString32("zh");
+        skin.setFontFace(lString32("DejaVu Sans"));
         if (skin.getFontFace() != "AR PL New Sung") return 2;
     }
-    crCurrentLang = lString16("en");
+    crCurrentLang = lString32("en");
     CHECK(fontMan->RegisterFont(lString8(argv[1])));
     CHECK(fontMan->RegisterFont(lString8(argv[2])));
     int result = checkSettingsHeader(argv[3], argv[4]);

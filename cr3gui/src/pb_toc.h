@@ -13,7 +13,7 @@
 
 class V3DocViewWin;
 
-extern lString16 pbSkinFileName;
+extern lString32 pbSkinFileName;
 extern V3DocViewWin * main_win;
 
 class CRTocMenu : public CRFullScreenMenu

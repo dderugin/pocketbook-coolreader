@@ -37,3 +37,8 @@ before treating a candidate as a validated release.
 This software is based in part on the work of the Independent JPEG Group.
 Portions of this software are copyright 2026 The FreeType Project
 (https://freetype.org). All rights reserved.
+
+The CREngine migration additionally uses QImageScale from the same pinned
+CoolReader source commit, without linking the Qt framework. GPLv2 is the chosen
+Qt source-license alternative; source notices and the image-transform notices
+are retained. This component is used by font/image scaling in the new engine.

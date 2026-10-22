@@ -167,14 +167,14 @@ void pbLaunchWaitBinary(const char *binary);
 void enterStandByMode();
 void toggleInvertDisplay();
 void toggleStatusLine();
-void launchBrowser(lString16 url);
+void launchBrowser(lString32 url);
 void drawTemporaryZoom();
 void exitApp();
 bool showPagesTilChapterEnd();
 bool showChapterMarks();
 bool fontAntiAliasingActivated();
 
-lString16 getPbModelNumber();
+lString32 getPbModelNumber();
 
 #define MIN_PAGE_TURN_SWIPE_WIDTH 0.1 /* 10% */
 

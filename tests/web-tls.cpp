@@ -5,7 +5,7 @@
 #include <fstream>
 #include <iterator>
 #include <limits>
-lString16 pbSkinFileName, openedCacheFile, currentCacheDir;
+lString32 pbSkinFileName, openedCacheFile, currentCacheDir;
 class Callbacks : public web {
 public:
     using web::writer;
