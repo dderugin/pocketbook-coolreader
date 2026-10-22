@@ -6,7 +6,8 @@ All source codes (except thirdparty directory) are provided under the terms of G
 
 This is a **fork of** [pocketbook-port (sourceforge.net)](https://sourceforge.net/p/crengine/crengine/ci/pocketbook-port/tree/)
 
-**Source code** is available at [github.com](https://github.com/blchinezu/pocketbook-coolreader)
+**Source code** for this fork is available at [dderugin/pocketbook-coolreader](https://github.com/dderugin/pocketbook-coolreader).
+The upstream project is [blchinezu/pocketbook-coolreader](https://github.com/blchinezu/pocketbook-coolreader).
 
 The **forum thread** is at [mobileread.com](http://www.mobileread.com/forums/showthread.php?t=256917)
 
@@ -14,7 +15,26 @@ The **forum thread** is at [mobileread.com](http://www.mobileread.com/forums/sho
 
 --------------------------------------------------------------------------------
 
-### Download
+### PocketBook Touch HD 3 — firmware 6.11.2001
+
+[Download R5](https://github.com/dderugin/pocketbook-coolreader/releases/tag/touch-hd3-fw6-r5) · [Installation and build guide](README-touch-hd3.txt) · [Download page](https://dderugin.github.io/pocketbook-coolreader/)
+
+This fork includes the firmware-6 compatibility fixes for **Touch HD 3 / PB632**.
+Revision 5 fixes the startup and first-page crashes. Book display and physical
+page buttons were confirmed working on the reader. Other models and firmware
+versions have not been verified.
+
+Extract the release ZIP and merge **both `system` and `applications`** into the
+reader's storage, retaining existing settings. Launch **Applications → CoolReader**.
+See the guide for backups and Library's “Open with” file associations.
+
+The source includes the SDK toolchain, build/package scripts, four ARM regression
+checks, and a minimal static download page under [`docs/`](docs/). Build outputs,
+SDKs, firmware images, and temporary SSH/debug credentials are excluded from Git.
+
+--------------------------------------------------------------------------------
+
+### Legacy builds
 
  - [Latest release](https://github.com/blchinezu/pocketbook-coolreader/releases)
  - [OTA Source](https://github.com/blchinezu/pocketbook-coolreader/tree/master/builds)

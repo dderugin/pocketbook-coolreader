@@ -1,0 +1,47 @@
+<!doctype html>
+<html lang="en">
+<head>
+  <meta charset="utf-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1">
+  <meta name="theme-color" content="#fafaf8">
+  <meta name="description" content="Download CoolReader revision 5 for PocketBook Touch HD 3 (PB632), firmware 6.11.2001. Installation guide, checksum, and source code.">
+  <title>CoolReader for PocketBook · R5</title>
+  <link rel="icon" type="image/svg+xml" href="assets/favicon.svg">
+  <link rel="stylesheet" href="styles.css">
+  <script src="script.js" defer></script>
+</head>
+<body>
+  <a class="skip-link" href="#main">Skip to content</a>
+  <div class="page">
+    <header class="site-header">
+      <a class="brand" href="#" aria-label="CoolReader home"><svg viewBox="0 0 32 32" aria-hidden="true"><path d="M3 5c5-1 9 0 13 3 4-3 8-4 13-3v22c-5-1-9 0-13 3-4-3-8-4-13-3V5Z"/><path d="M16 8v22"/></svg>CoolReader</a>
+      <a class="upstream" href="https://github.com/blchinezu/pocketbook-coolreader" target="_blank" rel="noopener noreferrer">Upstream project <span aria-hidden="true">↗</span></a>
+    </header>
+    <main id="main">
+      <section class="release" aria-labelledby="title">
+        <p class="release-meta">Revision 5 <span aria-hidden="true">/</span> 22 October 2026</p>
+        <h1 id="title">CoolReader for PocketBook</h1>
+        <p class="intro">Fixed build for <strong>Touch HD 3 (PB632)</strong>, firmware <strong>6.11.2001</strong>.</p>
+        <div class="download-panel">
+          <div><h2>CoolReader R5</h2><p>ZIP archive · 5.0 MB</p></div>
+          <a class="download-button" href="https://github.com/dderugin/pocketbook-coolreader/releases/download/touch-hd3-fw6-r5/coolreader-touch-hd3-fw6.11.2001-r5.zip" download><svg viewBox="0 0 24 24" aria-hidden="true"><path d="M12 3v12m-5-5 5 5 5-5M4 16v5h16v-5"/></svg>Download ZIP</a>
+        </div>
+        <div class="download-links"><a href="https://github.com/dderugin/pocketbook-coolreader/releases/download/touch-hd3-fw6-r5/README-touch-hd3.txt" download>Installation guide <span aria-hidden="true">↗</span></a><a href="https://github.com/dderugin/pocketbook-coolreader/releases/download/touch-hd3-fw6-r5/coolreader-touch-hd3-r5-source.tar.gz" download>Source code <span aria-hidden="true">↗</span></a></div>
+        <details class="checksum-details"><summary>SHA-256 checksum <span aria-hidden="true">+</span></summary><div class="checksum"><code id="checksum-value">75b792ddacc3b86c375c988dc6b461ae5cf825c2075adc2cfea98b2f127fe345</code><button type="button" id="copy-checksum" aria-label="Copy SHA-256 checksum" hidden><span>Copy</span></button><span class="sr-only" id="copy-status" role="status"></span></div><a class="checksum-file" href="https://github.com/dderugin/pocketbook-coolreader/releases/download/touch-hd3-fw6-r5/SHA256SUMS.txt" download>Download checksums</a></details>
+      </section>
+      <section class="installation" aria-labelledby="install-title">
+        <h2 id="install-title">Installation</h2>
+        <ol><li>Connect the reader by USB. Close CoolReader and back up your existing files and settings.</li><li>Extract the ZIP. Merge <code>system</code> and <code>applications</code> into the reader’s storage, keeping existing files.</li><li>Safely eject the reader. Open <strong>Applications → CoolReader</strong>.</li></ol>
+        <p class="note">To add CoolReader to Library’s “Open with” menu, follow the <a href="https://github.com/dderugin/pocketbook-coolreader/releases/download/touch-hd3-fw6-r5/README-touch-hd3.txt">file-association instructions</a> in the guide.</p>
+      </section>
+      <section class="build-notes" aria-labelledby="notes-title">
+        <h2 id="notes-title">About this build</h2>
+        <p>R5 fixes a language-symbol collision that caused a crash while drawing the first page. It includes the earlier startup fixes and an Applications shortcut.</p>
+        <dl><div><dt>Confirmed on device</dt><dd>Book display and physical page buttons.</dd></div><div><dt>Still to verify</dt><dd>Touch gestures, dictionary, sleep/wake, frontlight, and saved reading position.</dd></div></dl>
+        <p class="note">Only PB632 with firmware 6.11.2001 has been verified.</p>
+      </section>
+    </main>
+    <footer><p>Independent community build.</p><div><a href="LICENSE.txt">GPL v2</a><a href="https://github.com/dderugin/pocketbook-coolreader/releases/download/touch-hd3-fw6-r5/coolreader-touch-hd3-r5-source.tar.gz" download>Corresponding source</a></div></footer>
+  </div>
+</body>
+</html>

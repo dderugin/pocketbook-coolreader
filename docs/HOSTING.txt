@@ -1,0 +1,47 @@
+CoolReader download website
+==========================
+
+This is a self-contained static website. No build, package manager, database,
+external fonts, tracking, or API keys are needed. Binary and source downloads are hosted as versioned GitHub release assets.
+
+Preview locally
+---------------
+From this folder, run:
+  python3 -m http.server 8080 --bind 127.0.0.1
+Open http://127.0.0.1:8080 in a browser.
+
+You can also open index.html directly. Checksum copying is available when the
+browser permits clipboard access; the visible hash and checksum file always work.
+
+Publish
+-------
+Copy this folder's contents to any static web host or web server document root.
+Keep index.html at the root, and preserve assets/ paths.
+The site uses relative URLs so it also works in a subdirectory.
+Use HTTPS for clipboard copying and a secure download connection.
+Serve .zip as application/zip, .gz as application/gzip and .txt as text/plain.
+Large binary/source downloads are served by GitHub Releases rather than Pages.
+There are no secrets or SSH access tools in this website.
+
+Contents
+--------
+index.html       Release details, installation steps and checksum disclosure
+styles.css       Minimal responsive design
+script.js        Optional checksum clipboard enhancement
+assets/          SVG favicon
+Downloads        Versioned links to GitHub release assets
+release.json     Public release metadata
+LICENSE.txt      CoolReader's GPL v2 license
+
+Release
+-------
+Device: PocketBook Touch HD 3 / PB632
+Firmware: 6.11.2001
+Revision: 5
+Release date: 2026-10-22
+Binary ZIP SHA256:
+75b792ddacc3b86c375c988dc6b461ae5cf825c2075adc2cfea98b2f127fe345
+
+The site is an independent community download page. It accurately distinguishes
+confirmed book display and physical buttons from features still needing testing.
+The R5 ZIP is identical to the verified build supplied in the chat.
