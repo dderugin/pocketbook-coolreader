@@ -28,13 +28,16 @@ Private keys remain in the server's /etc/letsencrypt directory.
 
 Artifacts
 ---------
-The files from GitHub release touch-hd3-fw6-r5 are mirrored byte-for-byte,
-including the install ZIP, corresponding source, patch, debug symbols,
-installation guide, verification report, website snapshot and SHA256SUMS.txt.
-The ZIP is the unchanged revision tested on the physical Touch HD 3.
+The site serves the current install ZIP, source archive, build metadata,
+verification report, installation text and checksums. Source matches commit
+d73cbc3fa8b198317c190a454ee8685d9788d5b5, merged into master via PR #1.
+Older download files and release directories are removed after the active
+site has been validated. GitHub releases are managed separately.
 
 Device: PocketBook Touch HD 3 / PB632
 Firmware: 6.11.2001
-Revision: 5
+Revision: wide-back
+Validation: eight ARM/QEMU regression groups passed; installed on the reader;
+complete interactive physical-reader validation remains pending.
 Install ZIP SHA256:
-75b792ddacc3b86c375c988dc6b461ae5cf825c2075adc2cfea98b2f127fe345
+67e66eef8231462be3b6fa0ebe0ce94e2719b005d6f1d89786308bf3b66de40d

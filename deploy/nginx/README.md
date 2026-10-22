@@ -19,14 +19,16 @@ The existing virtual hosts can continue to use their own routing.
 
 Prepare a release directory containing `docs/index.html`, `installation.html`, `styles.css`,
 `assets/`, `LICENSE.txt`, `release.json` and a `downloads/` directory containing
-the eight files from GitHub release `touch-hd3-fw6-r5`. Do not copy the SDK,
+the current install ZIP, matching source archive, installation text, build metadata,
+verification report and checksums described by `docs/release.json`. Keep only the
+current build on this server; remove previous release directories after validation. Do not copy the SDK,
 firmware image, workspace, SSH keys or nginx configuration into the web root.
 
 On the server, verify `downloads/SHA256SUMS.txt` with `sha256sum -c` from the
 downloads directory. The install ZIP must retain this SHA-256:
 
 ```text
-75b792ddacc3b86c375c988dc6b461ae5cf825c2075adc2cfea98b2f127fe345
+67e66eef8231462be3b6fa0ebe0ce94e2719b005d6f1d89786308bf3b66de40d
 ```
 
 Use root-owned directories with mode 755 and files with mode 644. Publish into
@@ -40,8 +42,8 @@ sudo mv -Tf /var/www/coolreader/current.next /var/www/coolreader/current
 ```
 
 The HTML uses the primary domain for downloads; keep `docs/release.json` and
-those links aligned when changing a release. The GitHub release remains a
-backup source. The website ZIP within R5 is a historical release snapshot.
+those links aligned when changing a release. Source archives must match the binary’s source commit. GitHub and repository
+history are separate from this server’s current-build-only download policy.
 
 ## First nginx setup
 
@@ -84,7 +86,8 @@ From a LAN without NAT loopback, use split DNS or curl's `--resolve` option to
 map the public hostname to the nginx server's LAN address. This keeps normal
 hostname and certificate validation enabled; do not disable TLS verification.
 
-To roll back content, switch `current` to the previous release directory with
-the same atomic symlink operation. To disable only this site, remove its
-`sites-enabled` symlink, run `nginx -t`, then reload nginx. Retain the previous
-release and the server's certificates for recovery.
+After validating the newly active site, remove older directories under
+`/var/www/coolreader/releases/`; keep only the directory targeted by `current`.
+To roll back later, redeploy the desired version from Git/source artifacts.
+To disable only this site, remove its `sites-enabled` symlink, run `nginx -t`,
+then reload nginx. Keep the server’s certificates for recovery.
