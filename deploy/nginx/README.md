@@ -17,7 +17,7 @@ The existing virtual hosts can continue to use their own routing.
 
 ## Publish content
 
-Prepare a release directory containing `docs/index.html`, `styles.css`,
+Prepare a release directory containing `docs/index.html`, `installation.html`, `styles.css`,
 `assets/`, `LICENSE.txt`, `release.json` and a `downloads/` directory containing
 the eight files from GitHub release `touch-hd3-fw6-r5`. Do not copy the SDK,
 firmware image, workspace, SSH keys or nginx configuration into the web root.

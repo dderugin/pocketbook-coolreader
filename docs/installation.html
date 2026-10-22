@@ -1,0 +1,63 @@
+<!doctype html>
+<html lang="en">
+<head>
+  <meta charset="utf-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1">
+  <meta name="theme-color" content="#fafaf8">
+  <meta name="description" content="Install CoolReader R5 on PocketBook Touch HD 3 and add it to the Library’s Open with menu.">
+  <title>Installation guide · CoolReader</title>
+  <link rel="canonical" href="https://coolreader.nimbushub.eu/installation.html">
+  <link rel="icon" type="image/svg+xml" href="assets/favicon.svg">
+  <link rel="stylesheet" href="styles.css">
+</head>
+<body>
+  <a class="skip-link" href="#main">Skip to content</a>
+  <div class="page">
+    <header class="site-header">
+      <a class="brand" href="./" aria-label="CoolReader home"><svg viewBox="0 0 32 32" aria-hidden="true"><path d="M3 5c5-1 9 0 13 3 4-3 8-4 13-3v22c-5-1-9 0-13 3-4-3-8-4-13-3V5Z"/><path d="M16 8v22"/></svg>CoolReader</a>
+      <a class="repository" href="https://github.com/dderugin/pocketbook-coolreader" target="_blank" rel="noopener noreferrer">Upstream project <span aria-hidden="true">↗</span></a>
+    </header>
+    <main id="main" class="guide">
+      <div class="guide-heading">
+        <a class="back-link" href="./">← Downloads</a>
+        <h1>Installation guide</h1>
+        <p class="intro">CoolReader R5 · <strong>Touch HD 3 (PB632)</strong> · firmware <strong>6.11.2001</strong></p>
+      </div>
+      <section aria-labelledby="install">
+        <h2 id="install">Install</h2>
+        <ol>
+          <li>Close CoolReader, connect the reader by USB and select PC connection mode.</li>
+          <li>Back up <code>system/bin/cr3-pb.app</code>, <code>system/share/cr3</code> and <code>system/config/extensions.cfg</code> if they exist. Keep the full <code>system/share/cr3</code> backup to preserve settings and reading history.</li>
+          <li><a href="https://coolreader.nimbushub.eu/downloads/coolreader-touch-hd3-fw6.11.2001-r5.zip" download>Download the R5 ZIP</a> and extract it on your computer.</li>
+          <li>Copy and merge the extracted <code>system</code> and <code>applications</code> folders into the root of the reader’s USB storage. Replace matching CoolReader files and keep all other existing files.</li>
+          <li>Safely eject the reader, then open <strong>Applications → CoolReader</strong>.</li>
+        </ol>
+        <p>The first launch opens the bundled welcome book. Later launches reopen the last existing book opened with CoolReader. You can also use its Recent books menu.</p>
+      </section>
+      <section aria-labelledby="file-associations">
+        <h2 id="file-associations">Open books from Library</h2>
+        <p>To add CoolReader to Library’s <strong>Open with</strong> menu, connect the reader by USB again and edit <code>system/config/extensions.cfg</code> with a plain-text editor.</p>
+        <ul>
+          <li>If the file does not exist, copy <code>extensions.cfg.example</code> from the extracted ZIP to <code>system/config/extensions.cfg</code>.</li>
+          <li>If the file already exists, add <code>cr3-pb.app</code> to the comma-separated application list for each supported format you want to open. Preserve the existing readers and all other entries.</li>
+        </ul>
+        <p>For example, EPUB and FB2 entries on firmware 6.11.2001 can look like this:</p>
+        <pre aria-label="Example EPUB and FB2 file associations"><code>epub:@EPUB_file:1:eink-reader_with_blink.app,eink-reader_with_epub2.app,cr3-pb.app:ICON_EPUB
+fb2:@FB2_file:1:eink-reader.app,cr3-pb.app:ICON_FB2</code></pre>
+        <p>The stock readers stay first in the list and remain the default. Leave PDF entries assigned to the stock PDF readers.</p>
+        <p>Save the file and safely eject the reader. In Library, long-press an EPUB or FB2 book, then choose <strong>Open with → CoolReader</strong>. The entry may appear as <code>cr3-pb.app</code>.</p>
+      </section>
+      <section aria-labelledby="check">
+        <h2 id="check">Check the installation</h2>
+        <p>Open an EPUB and an FB2 book. Check page-turn buttons, menus and the table of contents, then close and reopen a book to confirm its reading position is saved.</p>
+        <p>First-page rendering and physical page-turn buttons were confirmed on the Touch HD 3. Touch gestures, dictionary, rotation, frontlight and sleep/wake still need interactive testing.</p>
+      </section>
+      <section aria-labelledby="troubleshooting">
+        <h2 id="troubleshooting">If CoolReader does not start</h2>
+        <p>Keep <code>system/cr3-pb.normal.log</code> and <code>system/cr3-pb.crash.log</code>, and note the exact firmware version when reporting a problem in the <a href="https://github.com/dderugin/pocketbook-coolreader/issues">GitHub issues</a>.</p>
+        <p>To return to your previous installation, restore the files and configuration from your backup.</p>
+      </section>
+    </main>
+  </div>
+</body>
+</html>
