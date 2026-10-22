@@ -57,6 +57,7 @@ for name, sources, engine, arguments in [
     ('dictionary-safety', ['tests/dictionary-safety.cpp'], True, []),
     ('history-persistence', ['tests/history-persistence.cpp'], True, [out]),
     ('archive-boundaries', ['tests/archive-boundaries.cpp'], True, [out]),
+    ('atomic-faults', ['tests/atomic-faults.cpp'], True, [out]),
 ]:
     binary = out / name
     command = [compiler] + options + sources
@@ -64,6 +65,14 @@ for name, sources, engine, arguments in [
         command += ['-Wl,--exclude-libs,ALL'] + libraries + ['-linkview', '-lpng', '-lz', '-lbz2', '-lcurl', '-ldl', '-lm']
     subprocess.run([str(x) for x in command + ['-o', binary]], check=True)
     subprocess.run([str(x) for x in [qemu, '-L', runtime, '-E', 'LD_LIBRARY_PATH=' + str(runtime / 'lib'), binary] + arguments], check=True, timeout=30)
+    if name == 'atomic-faults':
+        preload = out / 'atomic-fsync-failure.so'
+        subprocess.run([str(compiler).replace('-g++', '-gcc'), '-shared', '-fPIC',
+                        'tests/atomic-fsync-failure.c', '-o', str(preload)], check=True)
+        subprocess.run([str(x) for x in [qemu, '-L', runtime, '-E',
+                       'LD_LIBRARY_PATH=' + str(runtime / 'lib'), '-E',
+                       'LD_PRELOAD=' + str(preload), binary, out, 'sync-failure']],
+                       check=True, timeout=30)
     passed.append(name)
     print('PASS:', name, flush=True)
 if source_metadata(root) != source_before:

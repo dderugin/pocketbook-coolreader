@@ -5,7 +5,7 @@ import subprocess
 
 REQUIRED_TESTS = {
     'reference-initialization', 'css-null-ancestor', 'skin-language-symbol',
-    'document-render', 'dictionary-safety', 'history-persistence', 'archive-boundaries',
+    'document-render', 'dictionary-safety', 'history-persistence', 'archive-boundaries', 'atomic-faults',
 }
 
 def sha256(path):

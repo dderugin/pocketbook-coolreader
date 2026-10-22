@@ -23,7 +23,7 @@ This also checks absent CSS ancestors/null nodes, skin language selection
 
 Reliability review regressions
 ------------------------------
-The build script now runs seven ARM/QEMU regressions before packaging. The new
+The build script now runs eight ARM/QEMU regressions before packaging. The new
 cases exercise dictionary UTF-8 buffer boundaries and redirect guards; XML
 history/bookmark round trips, failed and short writes, atomic replacement and
 backup retention; bounded archive fragments and UTF-8/legacy ZIP entry names,

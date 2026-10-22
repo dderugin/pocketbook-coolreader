@@ -3,11 +3,11 @@
 from pathlib import Path
 import argparse
 import re
+import os
 import hashlib
 import json
 import shutil
 import subprocess
-import sys
 import zipfile
 from build_metadata import source_metadata, sha256, verified_report
 
@@ -48,10 +48,14 @@ shutil.copy2(root / 'data/touch-hd3/CoolReader.app', apps / 'CoolReader.app')
 shutil.copy2(root / 'data/touch-hd3/Welcome.fb2', share / 'Welcome.fb2')
 launcher.chmod(0o755)
 shutil.copy2(root / 'LICENSE', stage / 'LICENSE')
-shutil.copy2(root / 'README-touch-hd3.txt', stage / 'README-touch-hd3.txt')
+(stage / 'README-touch-hd3.txt').write_text(
+    f"Candidate revision: {args.revision}\nBinary SHA-256: {sha256(binary)}\n"
+    "Automated ARM tests passed. This candidate has NOT been tested on a physical reader.\n"
+    "The R5 verification notes below describe the historical R5 build only.\n\n"
+    + (root / 'README-touch-hd3.txt').read_text())
 # This is intentionally a template: never overwrite a reader's custom config.
 shutil.copy2(root / 'data/touch-hd3/extensions.cfg.example', stage / 'extensions.cfg.example')
-sdk = Path(__import__('os').environ.get('POCKETBOOK_SDK', root / 'work/sdk/SDK-B288-6.10'))
+sdk = Path(os.environ.get('POCKETBOOK_SDK', root / 'work/sdk/SDK-B288-6.10'))
 compiler = sdk / 'usr/bin/arm-obreey-linux-gnueabi-g++'
 manifest = {
     'application': 'CoolReader for PocketBook Touch HD 3',
