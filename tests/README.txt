@@ -39,3 +39,11 @@ The default package revision is dev. Set CR3_REVISION explicitly to label a new
 candidate. Link outputs stay unstripped; debug information is saved separately,
 and a stripped staging copy with a GNU debug link goes into the ZIP. Repeating
 the build without source changes must retain useful debug sections.
+
+Package assets
+--------------
+tools/test-package-assets.py <staging-directory> runs before a ZIP is created.
+It checks the tested runtime asset hashes, all compiled language catalogs,
+the unpacked contents of all four skins and both launchers. Generated ZIP
+metadata and translation binaries are not stored as duplicate source assets.
+Styles, dictionaries, hyphenation patterns and manuals live in cr3gui/data.

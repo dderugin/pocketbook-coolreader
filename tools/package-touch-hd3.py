@@ -7,6 +7,7 @@ import os
 import hashlib
 import json
 import shutil
+import sys
 import subprocess
 import zipfile
 from build_metadata import source_metadata, sha256, verified_report
@@ -27,8 +28,13 @@ stage = root / ('work/package-touch-hd3-' + args.revision)
 if stage.exists():
     shutil.rmtree(stage)
 share = stage / 'system/share/cr3'
-shutil.copytree(root / 'data/common/system/share/cr3', share)
-shutil.copy2(root / 'data/firmware-specific/pro5/system/share/cr3/devices.ini', share)
+share.mkdir(parents=True)
+assets = root / 'cr3gui/data'
+for stylesheet in sorted(assets.glob('*.css')):
+    shutil.copy2(stylesheet, share)
+for directory in ('hyph', 'chn', 'manual'):
+    shutil.copytree(assets / directory, share / directory)
+shutil.copy2(root / 'data/touch-hd3/devices.ini', share)
 for name in ('bin', 'skins', 'i18n', 'keymaps'):
     (share / name).mkdir(exist_ok=True)
 shutil.copy2(binary, share / 'bin/cr3-pb.app')
@@ -69,6 +75,8 @@ manifest = {
     'automated_validation': report,
     'device_validation': {'status': 'not-performed', 'binary_sha256': sha256(binary)},
 }
+subprocess.run([sys.executable, str(root / 'tools/test-package-assets.py'), str(stage)], check=True)
+manifest['package_asset_validation'] = 'passed'
 (stage / 'build-info.json').write_text(json.dumps(manifest, indent=2) + '\n')
 dest = args.dist_dir or root / 'dist'
 dest.mkdir(exist_ok=True)
