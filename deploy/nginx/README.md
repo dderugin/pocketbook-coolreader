@@ -28,7 +28,7 @@ On the server, verify `downloads/SHA256SUMS.txt` with `sha256sum -c` from the
 downloads directory. The install ZIP must retain this SHA-256:
 
 ```text
-67e66eef8231462be3b6fa0ebe0ce94e2719b005d6f1d89786308bf3b66de40d
+eeb198b878e6c6ec0ebf7ce15ef872c36699009256945536664e077970cefe68
 ```
 
 Use root-owned directories with mode 755 and files with mode 644. Publish into

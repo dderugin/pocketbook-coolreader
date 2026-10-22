@@ -30,14 +30,13 @@ Artifacts
 ---------
 The site serves the current install ZIP, source archive, build metadata,
 verification report, installation text and checksums. Source matches commit
-d73cbc3fa8b198317c190a454ee8685d9788d5b5, merged into master via PR #1.
-Older download files and release directories are removed after the active
-site has been validated. GitHub releases are managed separately.
+ebecbb7f256aba7983bdc65d837609134b5cbd11, merged into master via PR #4.
+Older download files and release directories are removed after validation.
 
 Device: PocketBook Touch HD 3 / PB632
 Firmware: 6.11.2001
-Revision: wide-back
-Validation: eight ARM/QEMU regression groups passed; installed on the reader;
-complete interactive physical-reader validation remains pending.
+Revision: crengine-3.2.59-1
+Validation: eleven ARM/QEMU regression groups and package checks passed;
+user confirmed working on the Touch HD 3 after the margin fix.
 Install ZIP SHA256:
-67e66eef8231462be3b6fa0ebe0ce94e2719b005d6f1d89786308bf3b66de40d
+eeb198b878e6c6ec0ebf7ce15ef872c36699009256945536664e077970cefe68

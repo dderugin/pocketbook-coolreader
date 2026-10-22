@@ -1,19 +1,20 @@
 {
-  "revision": "wide-back",
+  "revision": "crengine-3.2.59-1",
+  "engine": "3.2.59-1",
   "device": "PocketBook Touch HD 3 (PB632)",
   "firmware": "6.11.2001",
   "date": "2026-10-22",
-  "zip": "https://coolreader.nimbushub.eu/downloads/coolreader-touch-hd3-fw6.11.2001-wide-back.zip",
-  "sha256": "67e66eef8231462be3b6fa0ebe0ce94e2719b005d6f1d89786308bf3b66de40d",
-  "binary_sha256": "aac0e1a9c6dcd0de94afc62b78dd8f69296e8adc0885997fde06cef7d945d84c",
-  "source_commit": "d73cbc3fa8b198317c190a454ee8685d9788d5b5",
-  "merged_commit": "6e76ff16e760daef3e09ce40e101b6d85fcb251f",
+  "zip": "https://coolreader.nimbushub.eu/downloads/coolreader-touch-hd3-fw6.11.2001-crengine-3.2.59-1.zip",
+  "sha256": "eeb198b878e6c6ec0ebf7ce15ef872c36699009256945536664e077970cefe68",
+  "binary_sha256": "13221cb0478a3eae0f5353d68d033447ac1174ceb491c85aafed254ea8456741",
+  "source_commit": "ebecbb7f256aba7983bdc65d837609134b5cbd11",
+  "merged_commit": "8f592d510142c8de5f64e1a7272c7c8ca3a5a917",
   "validation": [
-    "Eight ARM/QEMU regression groups passed",
-    "Installed on Touch HD 3; complete interactive validation pending"
+    "Eleven ARM/QEMU regression groups and package checks passed",
+    "User confirmed working on Touch HD 3 after the margin fix"
   ],
-  "source": "https://coolreader.nimbushub.eu/downloads/coolreader-touch-hd3-wide-back-source.tar.gz",
-  "changes": "https://github.com/dderugin/pocketbook-coolreader/pull/1",
+  "source": "https://coolreader.nimbushub.eu/downloads/coolreader-touch-hd3-crengine-3.2.59-1-source.tar.gz",
+  "changes": "https://github.com/dderugin/pocketbook-coolreader/pull/4",
   "url": "https://coolreader.nimbushub.eu/",
-  "github_release": "https://github.com/dderugin/pocketbook-coolreader/releases/tag/touch-hd3-fw6-wide-back"
+  "github_release": "https://github.com/dderugin/pocketbook-coolreader/releases/tag/touch-hd3-fw6-crengine-3.2.59-1"
 }
