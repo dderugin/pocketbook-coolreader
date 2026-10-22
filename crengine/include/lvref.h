@@ -37,6 +37,11 @@ public:
     static ref_count_rec_t null_ref;
     static ref_count_rec_t protected_null_ref;
 
+#ifdef POCKETBOOK_FW6
+    // Global LVRef objects may precede this record's dynamic initialization.
+    // Constant initialization preserves their increments before main().
+    constexpr
+#endif
     ref_count_rec_t( void * obj ) : _refcount(1), _obj(obj) { }
 #if (LDOM_USE_OWN_MEM_MAN==1)
     void * operator new( size_t )

@@ -312,6 +312,12 @@ if ( ${GUI} STREQUAL CRGUI_JINKE_PLUGIN )
 elseif (${GUI} STREQUAL CRGUI_PB)
     ADD_EXECUTABLE(cr3-pb.app ${CR3_SOURCES})
     TARGET_LINK_LIBRARIES(cr3-pb.app crengine tinydict ${EXTRA_LIBS} ${STD_LIBS})
+    if(POCKETBOOK_FW6)
+        TARGET_LINK_LIBRARIES(cr3-pb.app m)
+        # Keep bundled FreeType/JPEG private: InkView must bind to firmware libraries.
+        set_property(TARGET cr3-pb.app APPEND_STRING PROPERTY LINK_FLAGS
+                     " -Wl,--exclude-libs,ALL")
+    endif()
     if (DEFINED CMAKE_STRIP)
        MESSAGE("Strip command:  ${CMAKE_STRIP} ${CMAKE_BINARY_DIR}/cr3gui/cr3-pb.app" )
        EXECUTE_PROCESS( COMMAND ${CMAKE_STRIP} ${CMAKE_BINARY_DIR}/cr3gui/cr3-pb.app )

@@ -19,7 +19,11 @@
 // uncomment to trace skin XML access errors / not found elements
 //#define TRACE_SKIN_ERRORS
 
+#ifdef POCKETBOOK_FW6
+extern lString16 crCurrentLang;
+#else
 extern lString16 currentLang;
+#endif
 
 class RecursionLimit
 {
@@ -871,7 +875,11 @@ CRSkinnedItem::CRSkinnedItem()
 
 void CRSkinnedItem::setFontFace( lString16 face )
 {
-    if( currentLang == "zh" ) {
+#ifdef POCKETBOOK_FW6
+    if (crCurrentLang == "zh") {
+#else
+    if (currentLang == "zh") {
+#endif
         face = lString16("AR PL New Sung");
     }
     if ( _fontFace != face ) {

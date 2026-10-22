@@ -16,6 +16,11 @@
 #include "cr3pocketbook.h"
 #include <inkview.h>
 #include <regex.h>
+#ifdef POCKETBOOK_FW6
+#include <signal.h>
+#include <sys/ucontext.h>
+#include <unistd.h>
+#endif
 #ifdef POCKETBOOK_PRO
     #include <inkplatform.h>
     #ifdef POCKETBOOK_PRO_FW5
@@ -43,6 +48,10 @@
 #define PB_DICT_SEARCH 6
 
 #define PB_LINE_HEIGHT 30
+
+#ifdef POCKETBOOK_FW6
+#define USERLOGOPATH USERCOMPATLOGOPATH
+#endif
 
 extern ifont* header_font;
 ifont * pbCrFont;
@@ -95,7 +104,12 @@ ibitmap *standByLockImage = NULL;
 lString16 pbSkinFileName;
 lString16 currentCacheDir;
 lString16 openedCacheFile;
+#ifdef POCKETBOOK_FW6
+lString16 crCurrentLang;
+#else
 lString16 currentLang;
+#define crCurrentLang currentLang
+#endif
 int fw_major;
 int fw_minor;
 int touchPointing;
@@ -299,12 +313,18 @@ CRPocketBookGlobals::CRPocketBookGlobals(char *fileName)
     _ready_sent = false;
     _translateTimer = false;
     _saved_page = -1;
+#ifdef POCKETBOOK_FW6
+    fprintf(stderr, "[cr3-fw6-r5] OpenConfig: %s\n", GLOBALCONFIGFILE);
+#endif
     iconfig *gc = OpenConfig(const_cast<char *>(GLOBALCONFIGFILE), NULL);
+#ifdef POCKETBOOK_FW6
+    fprintf(stderr, "[cr3-fw6-r5] OpenConfig returned %p\n", (void *)gc);
+#endif
     _lang = ReadString(gc, const_cast<char *>("language"), const_cast<char *>("en"));
     CRLog::trace("language=%s", _lang.c_str());
     if (_lang == "ua")
         _lang = "uk";
-    currentLang = lString16(_lang.c_str());
+    crCurrentLang = lString16(_lang.c_str());
     _keepOrientation = ReadInt(gc, const_cast<char *>("keeporient"), 0);
     _pbDictionary = ReadString(gc, const_cast<char *>("dictionary"), const_cast<char *>(""));
     CloseConfig(gc);
@@ -1579,6 +1599,7 @@ public:
     }
 };
 
+#ifndef POCKETBOOK_FW6
 class CRPocketBookContentsWindow : public CRPocketBookInkViewWindow
 {
 private:
@@ -1593,6 +1614,8 @@ public:
         OpenContents(_toc, _tocLength, _curPage, tocHandler);
     }
 };
+
+#endif // !POCKETBOOK_FW6
 
 class CRPbDictionaryDialog;
 class CRPbDictionaryMenu;
@@ -2236,13 +2259,28 @@ protected:
 
         // MULTI
         #if defined(POCKETBOOK_PRO) && !defined(POCKETBOOK_PRO_PRO2)
-        else if (CRTOUCH_MULTI_TOUCH == evType && touchPointing && max(pt.x,pt.y) > 2) {
+        else if (CRTOUCH_MULTI_TOUCH == evType && touchPointing &&
+#ifdef POCKETBOOK_FW6
+                 pt.y > 1)
+#else
+                 max(pt.x,pt.y) > 2)
+#endif
+        {
 
             if( CRPocketBookDocView::instance->getProps()->getIntDef(PROP_CTRL_PINCH_ZOOM, 1) == 0 ) {
                 return true;
             }
 
             iv_mtinfo *mti;
+#ifdef POCKETBOOK_FW6
+            // EVT_MTSYNC carries the frame index in x and contact count in y.
+            if ((mti = GetTouchInfoI(static_cast<unsigned int>(pt.x))) &&
+                mti[0].active && mti[1].active) {
+                int X1 = mti[0].x;
+                int Y1 = mti[0].y;
+                int X2 = mti[1].x;
+                int Y2 = mti[1].y;
+#else
             iv_mtinfo_54 *mti54; // iv_mtinfo changed starting with firmware 5.4
 
             if (inkview_GetTouchInfo && (mti = (*inkview_GetTouchInfo)())) {
@@ -2253,6 +2291,7 @@ protected:
                 int Y1 = (mtinfo_new) ? mti54[0].y : mti[0].y;
                 int X2 = (mtinfo_new) ? mti54[1].x : mti[1].x;
                 int Y2 = (mtinfo_new) ? mti54[1].y : mti[1].y;
+#endif
                 float distance = sqrt((X2-X1)*(X2-X1)+(Y2-Y1)*(Y2-Y1));
 
                 if (touchPointing == 1) {
@@ -2263,7 +2302,7 @@ protected:
                         finger1.current.y = finger1.start.y = Y1;
                         finger2.current.x = finger2.start.x = X2;
                         finger2.current.y = finger2.start.y = Y2;
-                        fingersDistance.start = distance;
+                        fingersDistance.current = fingersDistance.start = distance;
 
                         // screenshot = BitmapFromScreen(0, 0, ScreenWidth(), ScreenHeight());
                     }
@@ -2389,6 +2428,12 @@ protected:
         return false;
     }
 public:
+#ifdef POCKETBOOK_FW6
+    bool onMultitouchFrame(int frame, int contacts) {
+        lvPoint point(frame, contacts);
+        return onClientTouch(point, CRTOUCH_MULTI_TOUCH);
+    }
+#endif
     static CRPocketBookDocView * instance;
     CRPocketBookDocView( CRGUIWindowManager * wm, lString16 dataDir )
         : V3DocViewWin( wm, dataDir ), _bm3x3(NULL), _toc(NULL), _tocLength(0), _dictDlg(NULL), _rotatetimerset(false),
@@ -2810,6 +2855,11 @@ public:
             return;
         }
 
+        #ifdef POCKETBOOK_FW6
+        // OpenContents was removed; use CoolReader's own contents window.
+        showTocTouchMenu(_toc, _tocLength, _docview->getCurPage() + 1);
+        return;
+        #else
         #ifdef POCKETBOOK_PRO
 
         // If device supports touch, resolution is greater than 800x600 and a FW5 skin is used
@@ -2823,6 +2873,7 @@ public:
         CRPocketBookContentsWindow *wnd = new CRPocketBookContentsWindow(_wm, _toc,
                                                                          _tocLength, _docview->getCurPage() + 1);
         _wm->activateWindow( wnd );
+        #endif // POCKETBOOK_FW6
     }
 
     void showFrontLight() {
@@ -3375,8 +3426,8 @@ void CRPbDictionaryView::launchDictBrowser(const char *urlBase) {
     lString16 lang = main_win->getBookLanguage();
     CRLog::trace("launchDictBrowser(): main_win->getBookLanguage() = %s", UnicodeToUtf8(lang).c_str());
     if( lang.empty() ) {
-        lang = currentLang;
-        CRLog::trace("launchDictBrowser(): currentLang = %s", UnicodeToUtf8(lang).c_str());
+        lang = crCurrentLang;
+        CRLog::trace("launchDictBrowser(): crCurrentLang = %s", UnicodeToUtf8(lang).c_str());
     }
     if( lang.empty() ) {
         lang = lString16("en");
@@ -4758,9 +4809,15 @@ void launchBrowser(lString16 url) {
 
 int InitDoc(const char *exename, char *fileName)
 {
+#ifdef POCKETBOOK_FW6
+    fprintf(stderr, "[cr3-fw6-r5] InitDoc: logging\n");
+#endif
     static const lChar16 * css_file_name = L"fb2.css"; // fb2
 
-#ifdef __i386__
+#if defined(POCKETBOOK_FW6)
+    CRLog::setStderrLogger();
+    CRLog::setLogLevel(CRLog::LL_TRACE);
+#elif defined(__i386__)
     CRLog::setStdoutLogger();
     CRLog::setLogLevel(CRLog::LL_TRACE);
 #else
@@ -4769,6 +4826,9 @@ int InitDoc(const char *exename, char *fileName)
 
     CRLog::trace("InitDoc()");
 
+#ifdef POCKETBOOK_FW6
+    fprintf(stderr, "[cr3-fw6-r5] InitDoc: global configuration\n");
+#endif
     pbGlobals = new CRPocketBookGlobals(fileName);
     char manual_file[512] = USERDATA"/share/c3/manual/cr3-manual-en.fb2";
     {
@@ -5678,13 +5738,22 @@ int main_handler(int type, int par1, int par2)
     case EVT_POINTERDRAG:
 #endif
     case EVT_POINTERLONG:
-#if defined(POCKETBOOK_PRO) && !defined(POCKETBOOK_PRO_PRO2)
+#if defined(POCKETBOOK_PRO) && !defined(POCKETBOOK_PRO_PRO2) && !defined(POCKETBOOK_FW6)
     case EVT_MTSYNC:
 #endif
         CRPocketBookWindowManager::instance->onTouch(par1, par2, getTouchEventType(type));
         process_events = true;
         restartStandByTimer();
         break;
+#ifdef POCKETBOOK_FW6
+    case EVT_MTSYNC:
+        // These parameters describe a frame, not coordinates: bypass hit testing.
+        if (CRPocketBookWindowManager::instance->getTopVisibleWindow() == main_win)
+            CRPocketBookDocView::instance->onMultitouchFrame(par1, par2);
+        process_events = true;
+        restartStandByTimer();
+        break;
+#endif
     case EVT_INIT:
         SetPanelType(1);
         pbCrFontSize = round(PanelHeight()*0.32);
@@ -6024,8 +6093,32 @@ void getInkviewFeatures() {
 
 #endif
 
+#ifdef POCKETBOOK_FW6
+static void startupFaultHandler(int sig, siginfo_t *info, void *context) {
+    const ucontext_t *uc = static_cast<const ucontext_t *>(context);
+    char message[192];
+    int length = snprintf(message, sizeof(message),
+        "[cr3-fw6-r5] signal=%d address=%p pc=0x%08lx lr=0x%08lx\n",
+        sig, info->si_addr, uc->uc_mcontext.arm_pc, uc->uc_mcontext.arm_lr);
+    if (length > 0 && length < static_cast<int>(sizeof(message)))
+        write(STDERR_FILENO, message, length);
+    _exit(128 + sig);
+}
+static void installStartupFaultHandler() {
+    struct sigaction action = {};
+    sigemptyset(&action.sa_mask);
+    action.sa_sigaction = startupFaultHandler;
+    action.sa_flags = SA_SIGINFO | SA_RESETHAND;
+    sigaction(SIGSEGV, &action, NULL);
+    sigaction(SIGBUS, &action, NULL);
+    sigaction(SIGABRT, &action, NULL);
+}
+#endif
 int main(int argc, char **argv)
 {
+#ifdef POCKETBOOK_FW6
+    fprintf(stderr, "[cr3-fw6-r5] main entered, argc=%d\n", argc);
+#endif
     forcePartialBwUpdates = false;
     forcePartialUpdates = false;
     forceFullUpdates = false;
@@ -6038,17 +6131,35 @@ int main(int argc, char **argv)
     getInkviewFeatures();
     #endif
 
+#ifdef POCKETBOOK_FW6
+    fprintf(stderr, "[cr3-fw6-r5] opening InkView screen\n");
+#endif
     OpenScreen();
+#ifdef POCKETBOOK_FW6
+    installStartupFaultHandler();
+    fprintf(stderr, "[cr3-fw6-r5] screen ready\n");
+#endif
     if (argc < 2 || strlen(argv[1]) == 0 ) {
         Message(ICON_WARNING,  const_cast<char*>("CoolReader"), const_cast<char*>("No book to open!"), 2000);
         printf("No book to open!\n");
         return 1;
     }
+#ifdef POCKETBOOK_FW6
+    fprintf(stderr, "[cr3-fw6-r5] initializing document: %s\n", argv[1]);
+#endif
     if (!InitDoc(argv[0], argv[1])) {
         Message(ICON_WARNING,  const_cast<char*>("CoolReader"), const_cast<char*>("@Cant_open_file"), 2000);
         return 2;
     }
+#ifdef POCKETBOOK_FW6
+    fprintf(stderr, "[cr3-fw6-r5] document ready, header_font=%p\n", (void *)header_font);
+    if (header_font)
+        header_font->color = WHITE;
+    CRLog::setLogLevel(CRLog::LL_WARN);
+    fprintf(stderr, "[cr3-fw6-r5] entering InkView event loop\n");
+#else
     header_font->color = WHITE;
+#endif
     InkViewMain(main_handler);
     return 0;
 }

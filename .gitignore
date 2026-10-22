@@ -13,3 +13,6 @@ qtcreator-build
 /patches
 /000000
 *~
+
+/work/
+/dist/

@@ -257,6 +257,12 @@ bool OTA_updateFrom(const lString16 url) {
  * @return  true launched download
  */
 bool OTA_update(const char *branch) {
+#ifdef POCKETBOOK_FW6
+    // Upstream OTA packages contain the incompatible firmware-5 binary.
+    Message(ICON_INFORMATION, "CoolReader",
+            "Install updates for this Touch HD 3 build manually.", 3000);
+    return false;
+#endif
 
     CRLog::trace("OTA_update(%s)", branch);
 

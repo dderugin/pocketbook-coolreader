@@ -208,7 +208,9 @@ bool InitCREngine( const char * exename, lString16Collection & fontDirs )
 {
     CRLog::trace("InitCREngine(%s)", exename);
 
+#ifndef POCKETBOOK_FW6
     crSetSignalHandler();
+#endif
     for ( int k=0; k<fontDirs.length(); k++ )
         CRLog::trace(" fontDir: %s", LCSTR(fontDirs[k]));
     lString16 appname( exename );

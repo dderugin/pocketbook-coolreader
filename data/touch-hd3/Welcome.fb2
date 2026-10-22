@@ -1,0 +1,31 @@
+<?xml version="1.0" encoding="utf-8"?>
+<FictionBook xmlns="http://www.gribuser.ru/xml/fictionbook/2.0">
+  <description>
+    <title-info>
+      <genre>reference</genre>
+      <author><nickname>CoolReader</nickname></author>
+      <book-title>Welcome to CoolReader</book-title>
+      <lang>en</lang>
+    </title-info>
+    <document-info>
+      <author><nickname>CoolReader</nickname></author>
+      <date value="2026-10-22">2026-10-22</date>
+      <id>coolreader-touch-hd3-welcome</id>
+      <version>1.0</version>
+    </document-info>
+  </description>
+  <body>
+    <title><p>Welcome to CoolReader</p></title>
+    <section>
+      <title><p>Open a book</p></title>
+      <p>In the PocketBook Library, long-press an EPUB, FB2 or another supported book. Choose Open with, then CoolReader (it may be listed as cr3-pb.app).</p>
+      <p>If CoolReader is missing from Open with, follow README-touch-hd3.txt to add it to system/config/extensions.cfg.</p>
+      <p>The CoolReader entry in Apps reopens the last book you opened through the launcher. If that file is missing, this welcome document opens instead.</p>
+      <p>Your previous CoolReader books are also available from its Recent books menu.</p>
+    </section>
+    <section>
+      <title><p>Touch HD 3 build</p></title>
+      <p>This build targets PocketBook Touch HD 3 firmware 6.11.2001. On-device testing of this custom build is still required.</p>
+    </section>
+  </body>
+</FictionBook>

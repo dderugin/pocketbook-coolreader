@@ -3,6 +3,11 @@ cmake_minimum_required(VERSION 2.6)
 
 #INCLUDE(CPack)
 
+option(POCKETBOOK_FW6 "Build for modern PocketBook firmware and SDK" OFF)
+if(POCKETBOOK_FW6)
+  ADD_DEFINITIONS(-DPOCKETBOOK_FW6=1)
+endif()
+
 if( ${CMAKE_SYSTEM} MATCHES "Darwin" )
   message("MAC OSX build")
   SET(MAC 1)

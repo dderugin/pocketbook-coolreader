@@ -948,7 +948,7 @@ static bool parse_ident( const char * &str, char * ident )
 
 bool LVCssSelectorRule::check( const ldomNode * & node )
 {
-    if (node->isNull() || node->isRoot())
+    if (!node || node->isNull() || node->isRoot())
         return false;
     switch (_type)
     {
@@ -956,7 +956,7 @@ bool LVCssSelectorRule::check( const ldomNode * & node )
         //
         {
             node = node->getParentNode();
-            if (node->isNull())
+            if (!node || node->isNull())
                 return false;
             return node->getNodeId() == _id;
         }
@@ -967,7 +967,7 @@ bool LVCssSelectorRule::check( const ldomNode * & node )
             for (;;)
             {
                 node = node->getParentNode();
-                if (node->isNull())
+                if (!node || node->isNull())
                     return false;
                 if (node->getNodeId() == _id)
                     return true;
@@ -1059,6 +1059,8 @@ bool LVCssSelectorRule::check( const ldomNode * & node )
 
 bool LVCssSelector::check( const ldomNode * node ) const
 {
+    if (!node || node->isNull())
+        return false;
     // check main Id
     if (_id!=0 && node->getNodeId() != _id)
         return false;

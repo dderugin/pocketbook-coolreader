@@ -79,7 +79,11 @@ enum CRPbCommands {
 #define PB_CR3_CACHE_SIZE (0x100000 * 64)
 
 #define CR_PB_VERSION "0.0.6-17-62.1"
+#ifdef POCKETBOOK_FW6
+#define CR_PB_BUILD_DATE "2026-10-22"
+#else
 #define CR_PB_BUILD_DATE "2018-02-13"
+#endif
 
 #define PB_ROTATE_MODE_360 0
 #define PB_ROTATE_MODE_180 1
@@ -92,7 +96,9 @@ enum CRPbCommands {
 #define PB_FRESH_UPDATE_MARKER USERDATA"/.cr3updated"
 #define PB_DEV_MARKER          USERDATA"/.cr3-use-devel-branch"
 
-#if defined(POCKETBOOK_PRO_FW5)
+#if defined(POCKETBOOK_FW6)
+    #define CR_PB_SDK "touch-hd3-fw6"
+#elif defined(POCKETBOOK_PRO_FW5)
     #define CR_PB_SDK "pro5"
 #elif defined(POCKETBOOK_PRO)
     #if !defined(POCKETBOOK_PRO_PRO2)
