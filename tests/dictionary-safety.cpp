@@ -20,16 +20,16 @@ int main() {
     CHECK(PbDictionary::redirectFor(NULL).empty());
     std::string longWord(300, 'a');
     std::string article = " (n.) see " + longWord + ".\n";
-    CHECK(PbDictionary::redirectFor(article.c_str()) == lString16(longWord.c_str()));
+    CHECK(PbDictionary::redirectFor(article.c_str()) == lString32(longWord.c_str()));
     for (int i = 0; i < 1000; ++i) {
-        CHECK(PbDictionary::redirectFor(" (n.) see apple.\n") == lString16("apple"));
+        CHECK(PbDictionary::redirectFor(" (n.) see apple.\n") == lString32("apple"));
         CHECK(PbDictionary::redirectFor("not a redirect").empty());
     }
     PbDictionary::RedirectChain chain;
-    chain.add(lString16("A")); CHECK(!chain.canFollow(lString16("a")));
-    CHECK(chain.canFollow(lString16("B"))); chain.add(lString16("B"));
-    CHECK(!chain.canFollow(lString16("A")));
-    for (int i = 2; i < 16; ++i) { lString16 next = lString16::itoa(i); CHECK(chain.canFollow(next)); chain.add(next); }
-    CHECK(!chain.canFollow(lString16("seventeenth")));
+    chain.add(lString32("A")); CHECK(!chain.canFollow(lString32("a")));
+    CHECK(chain.canFollow(lString32("B"))); chain.add(lString32("B"));
+    CHECK(!chain.canFollow(lString32("A")));
+    for (int i = 2; i < 16; ++i) { lString32 next = lString32::itoa(i); CHECK(chain.canFollow(next)); chain.add(next); }
+    CHECK(!chain.canFollow(lString32("seventeenth")));
     puts("PASS: dictionary bounds, UTF-8, redirects and cycle/hop guards");
 }

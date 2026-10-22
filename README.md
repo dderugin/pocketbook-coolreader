@@ -59,6 +59,12 @@ the firmware trust store. Candidate ZIPs include third-party license notices.
 This dependency-upgrade candidate requires physical-reader validation before
 release.
 
+This branch ports the engine to official CREngine **3.2.59-1**, pinned at
+`dcc2d4c88b7ee66b8ee1223833c1a72cad3cdbc5`, while retaining the PocketBook touch
+UI. See [migration status and remaining checks](crengine/POCKETBOOK-PORT.txt).
+The engine candidate is experimental and requires physical-reader and bookmark
+migration validation. Optional shaping/SVG integrations are not enabled yet.
+
 ## Source layout
 
 | Directory | Purpose |

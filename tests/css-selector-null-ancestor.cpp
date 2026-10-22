@@ -1,16 +1,16 @@
 #include "crengine.h"
 #include "lvstsheet.h"
 #include <stdio.h>
-lString16 pbSkinFileName;
-lString16 openedCacheFile;
-lString16 currentCacheDir;
+lString32 pbSkinFileName;
+lString32 openedCacheFile;
+lString32 currentCacheDir;
 int testSelectors() {
     setbuf(stdout, NULL);
     ldomDocument doc;
     ldomNode *root = doc.getRootNode();
-    ldomNode *child = root->insertChildElement(doc.getElementNameIndex(L"p"));
+    ldomNode *child = root->insertChildElement(doc.getElementNameIndex(U"p"));
     LVCssSelectorRule missingAncestor(cssrt_ancessor);
-    missingAncestor.setId(doc.getElementNameIndex(L"missing"));
+    missingAncestor.setId(doc.getElementNameIndex(U"missing"));
     const ldomNode *node = child;
     puts("Checking selector whose ancestor is absent");
     if (missingAncestor.check(node)) return 1;

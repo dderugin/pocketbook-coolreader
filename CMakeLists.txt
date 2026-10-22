@@ -166,6 +166,7 @@ else()
     ${ANTIWORD_LIBRARIES}
   )
 endif( DEFINED POCKETBOOK_PRO )
+list(APPEND STD_LIBS qimagescale)
 include_directories(${FT_INCLUDE_PATH})
 
 

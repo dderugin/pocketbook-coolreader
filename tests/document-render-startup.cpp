@@ -4,15 +4,15 @@
 #include "../cr3gui/src/settings.h"
 #include <stdio.h>
 #include <string>
-lString16 pbSkinFileName;
-lString16 openedCacheFile;
-lString16 currentCacheDir;
+lString32 pbSkinFileName;
+lString32 openedCacheFile;
+lString32 currentCacheDir;
 DECL_DEF_CR_FONT_SIZES;
-static int testRendering(const char *defaultsFile) {
+static int testRendering(const char *defaultsFile, const char *epubFile) {
     LVDocView view(8);
     view.setDefaultFontFace(lString8("DejaVu Sans"));
     view.Resize(1072, 1448);
-    view.createDefaultDocument(lString16("Startup test"), lString16("No book loaded yet"));
+    view.createDefaultDocument(lString32("Startup test"), lString32("No book loaded yet"));
     view.Render();
     if (view.getPageCount() < 1) return 3;
     puts("PASS: startup placeholder document rendered");
@@ -21,10 +21,15 @@ static int testRendering(const char *defaultsFile) {
         xml += "<p>Привет! Проверка чтения книги. Text for paragraph layout and page rendering.</p>";
     xml += "</section></body></FictionBook>";
     LVStreamRef stream = LVCreateMemoryStream(const_cast<char *>(xml.data()), xml.size(), true);
-    if (!view.LoadDocument(stream)) return 4;
+    if (!view.LoadDocument(stream, U"regression.fb2")) return 4;
     view.Render();
     if (view.getPageCount() < 1) return 5;
     printf("PASS: Cyrillic FB2 rendered, %d pages\n", view.getPageCount());
+    CHECK(!view.getPageHeaderPages(0, view.getPageCount(), true).empty());
+    CHECK(!view.getCurrentChapterName().empty());
+    CHECK(view.getSectionBoundsPages().length() >= 1);
+    CHECK(view.currentPageIsBookmarked() == NULL);
+    CHECK(!view.removeCurrentPageShortcutBookmark());
     // A fresh installation must retain the captured font/layout after validation
     // and render successfully with the font supplied by the target firmware.
     CRPropRef defaults = LVCreatePropsContainer();
@@ -51,16 +56,33 @@ static int testRendering(const char *defaultsFile) {
     CHECK(preferences->getStringDef(PROP_FONT_FACE) == defaults->getStringDef(PROP_FONT_FACE));
     CHECK(preferences->getStringDef(PROP_PAGE_MARGIN_RIGHT) == defaults->getStringDef(PROP_PAGE_MARGIN_RIGHT));
     puts("PASS: reader defaults render with firmware font; user preferences take precedence");
+    CRPropRef legacyWeight = LVCreatePropsContainer();
+    legacyWeight->setInt(PROP_FONT_WEIGHT_EMBOLDEN, 1);
+    view.propsApply(legacyWeight);
+    CHECK(view.propsGetCurrent()->getIntDef(PROP_FONT_BASE_WEIGHT) == 700);
+    legacyWeight->setInt(PROP_FONT_WEIGHT_EMBOLDEN, 0);
+    view.propsApply(legacyWeight);
+    CHECK(view.propsGetCurrent()->getIntDef(PROP_FONT_BASE_WEIGHT) == 400);
+    CHECK(Utf8ToUnicode("😀").length() == 1);
+    LVDocView epub(8);
+    epub.setDefaultFontFace(lString8("DejaVu Sans"));
+    epub.Resize(1072, 1448);
+    CHECK(epub.LoadDocument(epubFile));
+    epub.Render();
+    CHECK(epub.getPageCount() > 0 && epub.getTitle() == lString32("EPUB regression"));
+    LVDocImageRef painted = epub.getPageImage(0);
+    CHECK(!painted.isNull() && painted->getDrawBuf()->GetWidth() > 0);
+    puts("PASS: UTF-32 supplementary characters and EPUB CSS/image page painting");
     return 0;
 }
 int main(int argc, char **argv) {
     setbuf(stdout, NULL);
-    if (argc < 6) return 1;
+    if (argc < 7) return 1;
     InitFontManager(lString8::empty_str);
     if (!fontMan->RegisterFont(lString8(argv[1])) || !fontMan->RegisterFont(lString8(argv[2]))) return 2;
     if (!fontMan->RegisterFont(lString8(argv[3]))) return 2;
-    HyphMan::initDictionaries(lString16(argv[5]));
-    int result = testRendering(argv[4]);
+    HyphMan::initDictionaries(lString32(argv[5]));
+    int result = testRendering(argv[4], argv[6]);
     HyphMan::uninit();
     ShutdownFontManager();
     return result;

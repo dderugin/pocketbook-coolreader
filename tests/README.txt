@@ -80,3 +80,11 @@ byte counts. OpenSSL CLI is required to generate the local test certificates.
 Neither TLS tests nor the application build require access to public servers.
 All tests link the same private archives as the application, using the generated
 dependency-link.json. Firmware library fallbacks cannot satisfy version checks.
+
+CREngine compatibility baseline
+------------------------------
+Document tests now use explicit UTF-32 interfaces and named in-memory documents.
+They also check chapter/bookmark helpers, supplementary Unicode and EPUB loading,
+CSS and image/page painting. The history group reads unversioned older PocketBook
+XML and preserves its metadata and saved pointer text. Actual pointer/DOM-version
+conversion and on-reader behavior still need dedicated migration validation.

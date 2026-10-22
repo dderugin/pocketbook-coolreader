@@ -1,5 +1,6 @@
 #include "crengine.h"
 #include "lvimg.h"
+#include "lvimagedecodercallback.h"
 #include "testutil.h"
 #include <cstdio>
 #include <cstring>
@@ -12,7 +13,7 @@
 #include <zlib.h>
 #include <curl/curl.h>
 
-lString16 pbSkinFileName, openedCacheFile, currentCacheDir;
+lString32 pbSkinFileName, openedCacheFile, currentCacheDir;
 class ImageCheck : public LVImageDecoderCallback {
 public:
     int lines = 0;
