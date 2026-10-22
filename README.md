@@ -2,12 +2,12 @@
 
 CoolReader for **Touch HD 3 / PB632**, targeting firmware **6.11.2001**.
 
-[Downloads](https://coolreader.nimbushub.eu/) · [Installation](https://coolreader.nimbushub.eu/installation.html) · [Published R5](https://github.com/dderugin/pocketbook-coolreader/releases/tag/touch-hd3-fw6-r5)
+[Downloads](https://coolreader.nimbushub.eu/) · [Installation](https://coolreader.nimbushub.eu/installation.html) · [GitHub release](https://github.com/dderugin/pocketbook-coolreader/releases/tag/touch-hd3-fw6-wide-back)
 
-R5 was verified on the physical reader for book display and page-turn buttons.
-The current source also contains dictionary, persistence, archive and build
-verification fixes. New builds are candidates until tested on the reader;
-`build-info.json` records automated results separately from device validation.
+The current build passes eight ARM/QEMU regression groups and is installed on
+the Touch HD 3. Complete interactive validation remains pending. Earlier device
+testing confirmed book display and physical page-turn buttons. `build-info.json`
+records automated results separately from device validation.
 Other devices and firmware versions have not been verified by this fork.
 
 New installations use the reading preferences captured from the Touch HD 3:

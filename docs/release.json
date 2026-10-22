@@ -14,5 +14,6 @@
   ],
   "source": "https://coolreader.nimbushub.eu/downloads/coolreader-touch-hd3-wide-back-source.tar.gz",
   "changes": "https://github.com/dderugin/pocketbook-coolreader/pull/1",
-  "url": "https://coolreader.nimbushub.eu/"
+  "url": "https://coolreader.nimbushub.eu/",
+  "github_release": "https://github.com/dderugin/pocketbook-coolreader/releases/tag/touch-hd3-fw6-wide-back"
 }
