@@ -53,9 +53,9 @@ patterns, Chinese dictionaries and manuals come from the single asset tree in
 | `docs/` | Static download site and installation page |
 | `deploy/nginx/` | Direct nginx hosting configuration and runbook |
 
-CMake supports the PocketBook frontend (`CRGUI_PB`, the default) and the existing
-FB2 metadata utility (`FB2PROPS`). Historical desktop frontends, older SDK
-scripts and prebuilt OTA packages are not maintained in this fork.
+CMake builds the PocketBook frontend (`CRGUI_PB`). Historical desktop frontends,
+the obsolete Jinke metadata plugin, older SDK scripts and prebuilt OTA packages
+are not maintained in this fork.
 
 ## Origin and license
 

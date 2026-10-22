@@ -40,13 +40,12 @@ elseif(CMAKE_COMPILER_IS_GNUCC OR CMAKE_COMPILER_IS_GNUCXX)
   endif()
 endif()
 
-# This source tree contains the PocketBook frontend and the FB2 metadata utility.
-set(GUI CRGUI_PB CACHE STRING "Frontend: CRGUI_PB or FB2PROPS")
-set_property(CACHE GUI PROPERTY STRINGS CRGUI_PB FB2PROPS)
-if(NOT GUI STREQUAL "CRGUI_PB" AND NOT GUI STREQUAL "FB2PROPS")
-  message(FATAL_ERROR "Unsupported GUI ${GUI}; use CRGUI_PB or FB2PROPS")
+# The maintained frontend is PocketBook; historical desktop ports are upstream.
+set(GUI CRGUI_PB CACHE STRING "Frontend: CRGUI_PB")
+set_property(CACHE GUI PROPERTY STRINGS CRGUI_PB)
+if(NOT GUI STREQUAL "CRGUI_PB")
+  message(FATAL_ERROR "Unsupported GUI ${GUI}; this fork builds CRGUI_PB")
 endif()
-message("Using GUI frontend ${GUI}")
 
 # Determines whether to use external app EDICT for dictionary
 if (NOT DEFINED USE_EXTERNAL_EDICT_DICTIONARY)
@@ -147,7 +146,6 @@ if (NOT ZLIB_FOUND)
   SET(ZLIB_LIBRARIES z)
 endif (NOT ZLIB_FOUND)
 
-if ( NOT ${GUI} STREQUAL FB2PROPS )
 if (NOT WIN32 AND NOT CR3_PNG)
 FIND_PACKAGE(PNG)
 endif (NOT WIN32 AND NOT CR3_PNG)
@@ -191,8 +189,6 @@ SET(ANTIWORD_INCLUDE_DIR ${CMAKE_CURRENT_SOURCE_DIR}/thirdparty/antiword)
 SET(ANTIWORD_LIBRARIES antiword)
 ADD_DEFINITIONS(-DENABLE_ANTIWORD=1)
 INCLUDE_DIRECTORIES( ${ANTIWORD_INCLUDE_DIR} )
-endif ( NOT ${GUI} STREQUAL FB2PROPS )
-
 
 INCLUDE_DIRECTORIES(
   ${PNG_INCLUDE_DIR}
@@ -203,64 +199,48 @@ INCLUDE_DIRECTORIES(
   ${CHM_INCLUDE_DIR}
 )
 
-if ( ${GUI} STREQUAL FB2PROPS )
+if( DEFINED POCKETBOOK_PRO )
   SET(STD_LIBS
+    ${JPEG_LIBRARIES}
+    ${FREETYPE_LIBRARIES}
+    ${PNG_LIBRARIES}
     ${ZLIB_LIBRARIES}
+    ${CHM_LIBRARIES}
+    ${ZLIB_LIBRARIES}
+    ${ANTIWORD_LIBRARIES}
+    curl
+    inkview
+    dl
   )
 else()
+  SET(STD_LIBS
+    ${JPEG_LIBRARIES}
+    ${FREETYPE_LIBRARIES}
+    ${PNG_LIBRARIES}
+    ${ZLIB_LIBRARIES}
+    ${CHM_LIBRARIES}
+    ${ZLIB_LIBRARIES}
+    ${ANTIWORD_LIBRARIES}
+  )
+endif( DEFINED POCKETBOOK_PRO )
+include_directories(${FT_INCLUDE_PATH})
 
-  if( DEFINED POCKETBOOK_PRO )
-    SET(STD_LIBS
-      ${JPEG_LIBRARIES}
-      ${FREETYPE_LIBRARIES}
-      ${PNG_LIBRARIES}
-      ${ZLIB_LIBRARIES}
-      ${CHM_LIBRARIES}
-      ${ZLIB_LIBRARIES}
-      ${ANTIWORD_LIBRARIES}
-      curl
-      inkview
-      dl
-    )
-  else()
-    SET(STD_LIBS
-      ${JPEG_LIBRARIES}
-      ${FREETYPE_LIBRARIES}
-      ${PNG_LIBRARIES}
-      ${ZLIB_LIBRARIES}
-      ${CHM_LIBRARIES}
-      ${ZLIB_LIBRARIES}
-      ${ANTIWORD_LIBRARIES}
-    )
-  endif( DEFINED POCKETBOOK_PRO )
-  include_directories(${FT_INCLUDE_PATH})
-endif ( ${GUI} STREQUAL FB2PROPS )
 
 include_directories(crengine/include)
 
-if ( NOT ${GUI} STREQUAL FB2PROPS )
 include_directories(tinydict)
 message("Will make tinydict library - .dict format support")
 ADD_SUBDIRECTORY(tinydict)
-endif ( NOT ${GUI} STREQUAL FB2PROPS )
 
-
-if (GUI STREQUAL "FB2PROPS")
-  message("Will make LIBFB2PROPS plugin")
-  ADD_DEFINITIONS(-DLBOOK=1 -DWITH_JINKE=1 -DCR_USE_JINKE=1 -DBUILD_LITE=1 ${CRGUI_DEFS})
-  ADD_SUBDIRECTORY(crengine)
-  ADD_SUBDIRECTORY(fb2props)
-else()
-  message("Will make CR3GUI for PocketBook")
-  ADD_DEFINITIONS(-DLBOOK=1 -DCR_POCKETBOOK=1 ${CRGUI_DEFS}
-    -DCR_USE_INVERT_FOR_SELECTION_MARKS=1 -DENABLE_UPDATE_MODE_SETTING=1)
-  ADD_DEFINITIONS(-DCR_INTERNAL_PAGE_ORIENTATION=0)
-  ADD_SUBDIRECTORY(crengine)
-  ADD_SUBDIRECTORY(cr3gui)
-  FIND_PATH(INKVIEW_INCLUDE_DIR inkview.h)
-  IF(INKVIEW_INCLUDE_DIR)
-    include_directories(${INKVIEW_INCLUDE_DIR})
-  ELSE()
-    message(FATAL_ERROR "inkview.h not found; use the PocketBook SDK toolchain")
-  ENDIF()
-endif()
+message("Will make CR3GUI for PocketBook")
+ADD_DEFINITIONS(-DLBOOK=1 -DCR_POCKETBOOK=1 ${CRGUI_DEFS}
+  -DCR_USE_INVERT_FOR_SELECTION_MARKS=1 -DENABLE_UPDATE_MODE_SETTING=1)
+ADD_DEFINITIONS(-DCR_INTERNAL_PAGE_ORIENTATION=0)
+ADD_SUBDIRECTORY(crengine)
+ADD_SUBDIRECTORY(cr3gui)
+FIND_PATH(INKVIEW_INCLUDE_DIR inkview.h)
+IF(INKVIEW_INCLUDE_DIR)
+  include_directories(${INKVIEW_INCLUDE_DIR})
+ELSE()
+  message(FATAL_ERROR "inkview.h not found; use the PocketBook SDK toolchain")
+ENDIF()
