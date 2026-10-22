@@ -23,7 +23,7 @@ This also checks absent CSS ancestors/null nodes, skin language selection
 
 Reliability review regressions
 ------------------------------
-The build script now runs ten ARM/QEMU regressions before packaging. The new
+The build script now runs eleven ARM/QEMU regressions before packaging. The new
 cases exercise dictionary UTF-8 buffer boundaries and redirect guards; XML
 history/bookmark round trips, failed and short writes, atomic replacement and
 backup retention; bounded archive fragments and UTF-8/legacy ZIP entry names,
@@ -88,3 +88,12 @@ They also check chapter/bookmark helpers, supplementary Unicode and EPUB loading
 CSS and image/page painting. The history group reads unversioned older PocketBook
 XML and preserves its metadata and saved pointer text. Actual pointer/DOM-version
 conversion and on-reader behavior still need dedicated migration validation.
+
+Reading-state migration
+-----------------------
+The reading-state-migration group checks real legacy pointers, including the
+last reading position with zero/one/two explicit bookmarks, range endpoints and
+annotation text, across memory streams, files and ZIP members. Migrated history
+is serialized and reopened against the modern DOM. Invalid pointers leave
+history unchanged; metadata scans skip conversion and a failed modern rewind
+rolls back the migrated history and restores the requested rendering settings.

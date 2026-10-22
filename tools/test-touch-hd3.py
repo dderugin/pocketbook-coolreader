@@ -64,6 +64,11 @@ with zipfile.ZipFile(epub, 'w', zipfile.ZIP_DEFLATED) as book:
     book.writestr('OPS/toc.ncx', '<ncx version="2005-1" xmlns="http://www.daisy.org/z3986/2005/ncx/"><head/><docTitle><text>EPUB regression</text></docTitle><navMap><navPoint id="chapter" playOrder="1"><navLabel><text>Chapter</text></navLabel><content src="chapter.xhtml"/></navPoint></navMap></ncx>')
     book.writestr('OPS/chapter.xhtml', '<html xmlns="http://www.w3.org/1999/xhtml"><head><title>Chapter</title><style>p { text-indent: 1em; color: #111; }</style></head><body><h1>Проверка EPUB</h1><p>Привет! Unicode 😀.</p><img src="pixel.png" width="16" height="16"/>' + '<p>Paragraph layout and page rendering.</p>' * 40 + '</body></html>')
     book.writestr('OPS/pixel.png', pixel)
+# Keep a legacy DOM fixture in both ordinary and ZIP form.
+migration_xml = '<FictionBook xmlns="http://www.gribuser.ru/xml/fictionbook/2.0"><description><title-info><book-title>Migration</book-title></title-info></description><body><section><p>First paragraph.</p><p>Saved reading position with <strong>inline text</strong> after it.</p></section></body></FictionBook>'
+(out / 'migration.fb2').write_text(migration_xml)
+with zipfile.ZipFile(out / 'migration.zip', 'w', zipfile.ZIP_DEFLATED) as archive:
+    archive.writestr('migration.fb2', migration_xml)
 # A private local CA makes HTTPS checks independent of the public network.
 class TLSHandler(http.server.BaseHTTPRequestHandler):
     protocol_version = 'HTTP/1.1'
@@ -111,6 +116,7 @@ for name, sources, engine, arguments in [
     ('css-null-ancestor', ['tests/css-selector-null-ancestor.cpp'], True, []),
     ('skin-language-symbol', ['tests/skin-language-symbol.cpp'], True, [root / 'work/firmware/ebrmain/cramfs/fonts/DejaVuSans.ttf', root / 'work/firmware/ebrmain/cramfs/fonts/DejaVuSans-Bold.ttf', build / 'cr3gui/pb631fw5.cr3skin', out]),
     ('document-render', ['tests/document-render-startup.cpp'], True, [root / 'work/firmware/ebrmain/cramfs/fonts/DejaVuSans.ttf', root / 'work/firmware/ebrmain/cramfs/fonts/DejaVuSans-Bold.ttf', root / 'work/firmware/ebrmain/cramfs/fonts/DroidSans.ttf', root / 'data/touch-hd3/cr3-defaults.ini', root / 'cr3gui/data/hyph/', epub, root / 'cr3gui/data/fb2.css']),
+    ('reading-state-migration', ['tests/reading-state-migration.cpp'], True, [root / 'work/firmware/ebrmain/cramfs/fonts/DejaVuSans.ttf', out / 'migration.fb2', out / 'migration.zip']),
     ('dependency-compatibility', ['tests/dependency-compatibility.cpp'], True, [out]),
     ('web-tls', ['tests/web-tls.cpp', 'cr3gui/src/web.cpp'], True, [tls_url, out / 'trusted.crt', out / 'untrusted.crt', out]),
     ('dictionary-safety', ['tests/dictionary-safety.cpp'], True, []),

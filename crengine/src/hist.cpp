@@ -495,34 +495,38 @@ void CRFileHistRecord::setLastPos( CRBookmark * bmk )
     _lastpos = *bmk;
 }
 
-void CRFileHistRecord::convertBookmarks(ldomDocument *doc, int newDOMversion)
+bool CRFileHistRecord::convertBookmarks(ldomDocument *doc, int newDOMversion)
 {
-    // TODO: Don't call tinyNodeCollection::setDOMVersionRequested()
-    // but directly use functions ldomDocument::createXPointerV1() & ldomDocument::createXPointerV2().
-    for ( int i=0; i< getBookmarks().length(); i++) {
-        CRBookmark * bmk = getBookmarks()[i];
-
-        if( bmk->isValid() ) {
-            if (bmk->getType() != bmkt_lastpos) {
-                doc->setDOMVersionRequested(getDOMversion());
-                ldomXPointer p = doc->createXPointer(bmk->getStartPos());
-                if ( !p.isNull() ) {
-                    doc->setDOMVersionRequested(newDOMversion);
-                    bmk->setStartPos(p.toString());
-                }
-                lString32 endPos = bmk->getEndPos();
-                if( !endPos.empty() ) {
-                    doc->setDOMVersionRequested(getDOMversion());
-                    p = doc->createXPointer(endPos);
-                    if( !p.isNull() ) {
-                        doc->setDOMVersionRequested(newDOMversion);
-                        bmk->setEndPos(p.toString());
-                    }
-                }
-            }
+    // The last reading position is stored separately from explicit bookmarks.
+    // Stage every pointer before modifying history: a bad range must not leave
+    // a mixture of old and normalized pointers under a new version label.
+    int documentVersion = doc->getDOMVersionRequested();
+    LVArray<lString32> starts, ends;
+    bool valid = true;
+    for (int i = -1; i < _bookmarks.length() && valid; ++i) {
+        CRBookmark *bmk = i < 0 ? &_lastpos : _bookmarks[i];
+        lString32 positions[2] = {bmk->getStartPos(), bmk->getEndPos()};
+        for (int j = 0; j < 2; ++j) {
+            if (positions[j].empty()) continue;
+            doc->setDOMVersionRequested(getDOMversion());
+            ldomXPointer ptr = doc->createXPointer(positions[j]);
+            if (ptr.isNull()) { valid = false; break; }
+            doc->setDOMVersionRequested(newDOMversion);
+            positions[j] = ptr.toString();
+            if (positions[j].empty()) { valid = false; break; }
         }
+        starts.add(positions[0]);
+        ends.add(positions[1]);
+    }
+    doc->setDOMVersionRequested(documentVersion);
+    if (!valid) return false;
+    for (int i = -1; i < _bookmarks.length(); ++i) {
+        CRBookmark *bmk = i < 0 ? &_lastpos : _bookmarks[i];
+        bmk->setStartPos(starts[i+1]);
+        bmk->setEndPos(ends[i+1]);
     }
     setDOMversion(newDOMversion);
+    return true;
 }
 
 lString32 CRBookmark::getChapterName( ldomXPointer ptr )

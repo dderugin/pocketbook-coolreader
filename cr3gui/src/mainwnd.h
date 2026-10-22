@@ -115,6 +115,9 @@ protected:
     lString32 _bookmarkDir;
 	lString32 _helpFile;
     lString32 _cssDir;
+    bool _settingsSaveFailed;
+    bool _historySaveFailed;
+    void reportSaveResult(bool saved, bool history);
     time_t _loadFileStart;
     lString32 _fileName;
 public:
