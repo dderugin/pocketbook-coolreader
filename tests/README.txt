@@ -59,3 +59,8 @@ memory-stream and atomic-file path, creates a new profile directory and reads
 back the font, size, margin and Unicode values. This reproduces the previously
 silent settings-save failure before the serializer fix.
 Packaging compares the installed defaults file with its repository source.
+
+The skin-language-symbol group also renders the settings menu with the PB631
+skin at Touch HD 3 portrait and landscape sizes. It checks that the header
+matches a menu row, the Back button responds throughout the full header-height
+square, the first item stays below it, and other menus retain their skin height.

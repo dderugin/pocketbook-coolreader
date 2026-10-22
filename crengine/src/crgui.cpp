@@ -1182,11 +1182,23 @@ void CRGUIWindowBase::drawTitleBar()
             closeBtnRc.top += dy/2; //FIXME: no boundaries checks
             closeBtnRc.bottom = closeBtnRc.top + closeBtnSkin->getMinSize().y;
 
+            lvRect touchRc = closeBtnRc;
+            if (getSkinName() == L"#settings") {
+                // Keep the arrow at its native size, centred in a finger-sized
+                // square spanning the full settings header height.
+                touchRc.top = titleRc.top;
+                touchRc.bottom = titleRc.bottom;
+                if (touchRc.width() < titleRc.height())
+                    touchRc.right = touchRc.left + titleRc.height();
+                int dx = (touchRc.width() - closeBtnRc.width()) / 2;
+                closeBtnRc.left += dx;
+                closeBtnRc.right += dx;
+            }
             closeBtnSkin->drawButton(buf, closeBtnRc);
             if (!_controlsCreated)
-                addControl(new CRButtonControl(this, closeBtnRc, closeBtnSkin, BTN_CLOSE,
+                addControl(new CRButtonControl(this, touchRc, closeBtnSkin, BTN_CLOSE,
                                                DCMD_BUTTON_PRESSED ));
-            imgWidth += (closeBtnRc.width() + ITEM_MARGIN);
+            imgWidth += (touchRc.width() + ITEM_MARGIN);
         }
     }
     lvRect textRect = titleRc;
@@ -1512,6 +1524,26 @@ lvPoint CRMenu::getItemSize()
     if ( maxw>0 )
         sz.x = sz.x + itemBorders.left + itemBorders.right + maxw;
     return sz;
+}
+
+bool CRMenu::getTitleRect(lvRect &rc)
+{
+    if (!CRGUIWindowBase::getTitleRect(rc))
+        return false;
+    if (!_fullscreen || _pageItems <= 0 || getSkinName() != L"#settings")
+        return true;
+    CRMenuSkinRef skin = getSkin();
+    CRRectSkinRef separator = skin->getSeparatorSkin();
+    int separatorHeight = separator.isNull() ? 0 : separator->getMinSize().y;
+    lvRect status;
+    getStatusRect(status);
+    // Share the available height between the header and the visible rows.
+    // Avoid getItemHeight(): its client rectangle depends on this title.
+    int rowHeight = (status.top - rc.top - separatorHeight * (_pageItems - 1))
+                    / (_pageItems + 1);
+    if (rowHeight > rc.height())
+        rc.bottom = rc.top + rowHeight;
+    return true;
 }
 
 int CRMenu::getItemHeight()

@@ -1251,6 +1251,7 @@ class CRMenu : public CRGUIWindowBase, public CRMenuItem {
         virtual lString16 getSubmenuValue();
         virtual void toggleSubmenuValue();
         virtual int getItemHeight();
+        virtual bool getTitleRect(lvRect &rc);
         virtual lvPoint getMaxItemSize();
         virtual lvPoint getItemSize();
         virtual lvPoint getSize();
