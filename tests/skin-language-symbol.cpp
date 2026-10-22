@@ -3,6 +3,8 @@
 #include "crgui.h"
 #include "testutil.h"
 #include <cstdio>
+#include <string>
+#include <vector>
 
 // This is the application's language string. Firmware exports currentLang()
 // as a function, so skin code must never import that symbol as a string.
@@ -13,7 +15,10 @@ lString16 pbSkinFileName;
 
 class TouchScreen : public CRGUIScreenBase {
 public:
-    TouchScreen() : CRGUIScreenBase(1072, 1448, false) {}
+    TouchScreen() : CRGUIScreenBase(1072, 1448, false) {
+        _canvas = LVRef<LVDrawBuf>(createCanvas(1072, 1448));
+    }
+    LVDrawBuf *createCanvas(int width, int height) { return new LVGrayDrawBuf(width, height, 8); }
     void update(const lvRect &, bool) {}
     bool isTouchSupported() { return true; }
 };
@@ -35,9 +40,16 @@ public:
                 return true;
         return false;
     }
+    bool pressBack(bool pressed) {
+        lvPoint point(1, 1);
+        for (int i = 0; i < _controls.length(); ++i)
+            if (dynamic_cast<CRButtonControl *>(_controls[i]) && _controls[i]->hitTest(point))
+                return _controls[i]->setSelected(pressed);
+        return false;
+    }
 };
 
-static int checkSettingsHeader(const char *skinFile) {
+static int checkSettingsHeader(const char *skinFile, const char *previewDirectory) {
     TouchScreen screen;
     CRGUIWindowManager wm(&screen);
     CHECK(wm.loadSkin(lString16(skinFile)));
@@ -57,6 +69,27 @@ static int checkSettingsHeader(const char *skinFile) {
         CHECK(menu.backHit(title.left + backWidth - 1, title.bottom - 1));
         CHECK(!menu.backHit(title.left + backWidth, title.top + 1));
         CHECK(!menu.backHit(title.left + 1, title.bottom));
+        LVRef<LVDrawBuf> canvas = screen.getCanvas();
+        std::vector<lUInt32> normal;
+        for (int y = title.top; y < title.bottom; ++y)
+            for (int x = title.left; x < title.left + backWidth; ++x)
+                normal.push_back(canvas->GetPixel(x, y));
+        CHECK(menu.pressBack(true));
+        CHECK(canvas->GetPixel(title.left + 1, title.top + 1) != normal[backWidth + 1]);
+        CHECK(menu.pressBack(false));
+        unsigned pixel = 0;
+        for (int y = title.top; y < title.bottom; ++y)
+            for (int x = title.left; x < title.left + backWidth; ++x)
+                CHECK(canvas->GetPixel(x, y) == normal[pixel++]);
+        std::string path = std::string(previewDirectory) +
+                           (rotated ? "/settings-landscape.pgm" : "/settings-portrait.pgm");
+        FILE *preview = fopen(path.c_str(), "wb");
+        CHECK(preview != NULL);
+        fprintf(preview, "P5\n%d %d\n255\n", title.width(), title.height());
+        for (int y = title.top; y < title.bottom; ++y)
+            for (int x = title.left; x < title.right; ++x)
+                fputc(canvas->GetPixel(x, y), preview);
+        CHECK(fclose(preview) == 0);
         printf("PASS: %s settings header %d px, rows %d px; Back target %d x %d px\n",
                rotated ? "landscape" : "portrait", title.height(), menu.getItemHeight(),
                backWidth, title.height());
@@ -69,7 +102,7 @@ static int checkSettingsHeader(const char *skinFile) {
 }
 
 int main(int argc, char **argv) {
-    CHECK(argc >= 4);
+    CHECK(argc >= 5);
     InitFontManager(lString8());
     crCurrentLang = lString16("en");
     {
@@ -83,7 +116,7 @@ int main(int argc, char **argv) {
     crCurrentLang = lString16("en");
     CHECK(fontMan->RegisterFont(lString8(argv[1])));
     CHECK(fontMan->RegisterFont(lString8(argv[2])));
-    int result = checkSettingsHeader(argv[3]);
+    int result = checkSettingsHeader(argv[3], argv[4]);
     ShutdownFontManager();
     CHECK(result == 0);
     puts("PASS: skin reads the application language string, including Chinese fallback");

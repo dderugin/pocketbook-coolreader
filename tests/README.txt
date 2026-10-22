@@ -65,3 +65,5 @@ skin at Touch HD 3 portrait and landscape sizes. It checks that the header
 matches a menu row, the Back button responds throughout a full-height target
 three times as wide, touches outside it miss, the first item stays below it,
 and other menus retain their skin height.
+It also checks pressed feedback and exact normal-state restoration after release,
+and saves portrait/landscape header previews in <build>/arm-regressions/*.pgm.

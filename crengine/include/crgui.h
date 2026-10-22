@@ -1489,6 +1489,7 @@ public:
     virtual bool setSelected(bool selected)
     {
         if (selected != _selected) {
+            _selected = selected;
             LVDrawBuf & buf = *_parent->getWindowManager()->getScreen()->getCanvas();
             int flags = selected ? CRButtonSkin::ENABLED|CRButtonSkin::PRESSED : CRButtonSkin::ENABLED;
             _btnSkin->drawButton(buf, _rect, flags);

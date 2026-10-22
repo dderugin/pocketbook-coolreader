@@ -942,6 +942,32 @@ void CRGUIWindowBase::draw()
     CRLog::trace("exit CRGUIWindowBase::draw()");
 }
 
+class CRSettingsBackButtonSkin : public CRButtonSkin
+{
+    CRRectSkinRef _title;
+public:
+    CRSettingsBackButtonSkin(CRRectSkinRef title) : _title(title) {}
+    virtual void drawButton(LVDrawBuf &buf, const lvRect &rc, int flags = ENABLED)
+    {
+        _title->draw(buf, rc);
+        lUInt32 color = _title->getTextColor();
+        if (flags & PRESSED) {
+            buf.FillRect(rc, color);
+            color ^= 0x00FFFFFF;
+        }
+        // A bold, symmetric chevron scales with header height, never target width.
+        int halfHeight = rc.height() / 4;
+        int stroke = rc.height() / 12;
+        if (stroke < 2) stroke = 2;
+        int left = rc.left + (rc.width() - halfHeight - stroke) / 2;
+        int centerY = rc.top + rc.height() / 2;
+        for (int y = -halfHeight; y <= halfHeight; ++y) {
+            int x = left + abs(y);
+            buf.FillRect(x, centerY + y, x + stroke, centerY + y + 1, color);
+        }
+    }
+};
+
 /// draw title bar using current skin, with optional scroll/tab/page indicator
 void CRGUIWindowBase::drawClient()
 {
@@ -1184,8 +1210,8 @@ void CRGUIWindowBase::drawTitleBar()
 
             lvRect touchRc = closeBtnRc;
             if (getSkinName() == L"#settings") {
-                // Keep the arrow at its native size, centred in a wide target
-                // spanning the full settings header height. Reserve caption space.
+                // Keep the chevron centred in a wide, full-height target.
+                // Reserve space for the settings caption.
                 touchRc.top = titleRc.top;
                 touchRc.bottom = titleRc.bottom;
                 int buttonWidth = titleRc.height() * 3;
@@ -1193,9 +1219,8 @@ void CRGUIWindowBase::drawTitleBar()
                     buttonWidth = titleRc.width() / 2;
                 if (touchRc.width() < buttonWidth)
                     touchRc.right = touchRc.left + buttonWidth;
-                int dx = (touchRc.width() - closeBtnRc.width()) / 2;
-                closeBtnRc.left += dx;
-                closeBtnRc.right += dx;
+                closeBtnSkin = CRButtonSkinRef(new CRSettingsBackButtonSkin(titleSkin));
+                closeBtnRc = touchRc;
             }
             closeBtnSkin->drawButton(buf, closeBtnRc);
             if (!_controlsCreated)

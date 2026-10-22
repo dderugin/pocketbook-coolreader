@@ -52,7 +52,7 @@ passed = []
 for name, sources, engine, arguments in [
     ('reference-initialization', ['tests/lvref-static-global.cpp', 'tests/lvref-static-sentinel.cpp'], False, []),
     ('css-null-ancestor', ['tests/css-selector-null-ancestor.cpp'], True, []),
-    ('skin-language-symbol', ['tests/skin-language-symbol.cpp'], True, [root / 'work/firmware/ebrmain/cramfs/fonts/DejaVuSans.ttf', root / 'work/firmware/ebrmain/cramfs/fonts/DejaVuSans-Bold.ttf', build / 'cr3gui/pb631fw5.cr3skin']),
+    ('skin-language-symbol', ['tests/skin-language-symbol.cpp'], True, [root / 'work/firmware/ebrmain/cramfs/fonts/DejaVuSans.ttf', root / 'work/firmware/ebrmain/cramfs/fonts/DejaVuSans-Bold.ttf', build / 'cr3gui/pb631fw5.cr3skin', out]),
     ('document-render', ['tests/document-render-startup.cpp'], True, [root / 'work/firmware/ebrmain/cramfs/fonts/DejaVuSans.ttf', root / 'work/firmware/ebrmain/cramfs/fonts/DejaVuSans-Bold.ttf', root / 'work/firmware/ebrmain/cramfs/fonts/DroidSans.ttf', root / 'data/touch-hd3/cr3-defaults.ini', root / 'cr3gui/data/hyph/']),
     ('dictionary-safety', ['tests/dictionary-safety.cpp'], True, []),
     ('history-persistence', ['tests/history-persistence.cpp'], True, [out]),
