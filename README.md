@@ -30,17 +30,57 @@ See [the detailed guide](README-touch-hd3.txt) for backups and troubleshooting.
 
 ## Build and test
 
-For a local macOS (including Apple Silicon) or Linux build with Docker:
+### Local Docker build (macOS or Linux)
+
+Requirements: a running Docker engine, Python 3.9+ and curl. The SDK runs in a
+Linux AMD64 container; the build also works on Apple Silicon using Rosetta.
+
+For Apple Silicon with Colima, install Rosetta once if needed, then configure
+an ARM64 VM with the settings tested on this project:
+
+```sh
+softwareupdate --install-rosetta --agree-to-license
+colima stop
+colima start --arch aarch64 --vm-type vz --vz-rosetta --cpu 6 --memory 12
+```
+
+Stopping Colima interrupts its running containers. If it is already running
+with suitable settings, skip these setup commands. Docker Desktop users can
+use their existing engine with Linux AMD64 emulation enabled.
+
+From the repository root, build and test:
 
 ```sh
 CR3_REVISION=local bash tools/docker-build-touch-hd3.sh
 ```
 
-The wrapper downloads verified SDK/firmware inputs, caches them in a Linux
-volume, runs the ARM tests and writes artifacts to `dist/`. See
-[local build setup and Colima/Rosetta settings](BUILDING.md).
+The first run downloads approximately 1.1 GB of pinned SDK/firmware archives,
+verifies their SHA-256 hashes, prepares the Linux build environment, builds the
+ARM executable, and runs all eleven ARM/QEMU regression groups and package
+checks. No remote build server or connected PocketBook is required.
 
-For an already configured native Linux environment:
+Artifacts are written to `dist/`:
+
+- `coolreader-touch-hd3-fw6.11.2001-local.zip` — installation package.
+- `coolreader-touch-hd3-fw6.11.2001-local.zip.sha256` — package checksum.
+- `coolreader-touch-hd3-local.tests.json` — automated test results.
+- `coolreader-touch-hd3-local.debug` — separate debug symbols.
+
+To change the artifact label or number of parallel jobs:
+
+```sh
+JOBS=2 CR3_REVISION=my-test bash tools/docker-build-touch-hd3.sh
+```
+
+The default is four parallel jobs. Repeated builds reuse the Docker image,
+SDK, firmware runtime and object files. Downloaded archives stay in
+`work/downloads/`; extracted inputs and build objects stay in the
+`coolreader-touch-hd3-work` Docker volume. Builds leave source files read-only
+inside the container and do not install or publish the resulting package.
+
+See [BUILDING.md](BUILDING.md) for cache management, Docker options and details.
+
+### Native Linux build
 
 Use Linux with CMake 3.18+, Make, gettext, zip, OpenSSL tools, Python 3 and the
 B288 SDK described in the detailed guide. Keep SDKs, extracted firmware and host tools under `work/`.
