@@ -2,7 +2,7 @@
 
 CoolReader for **Touch HD 3 / PB632**, targeting firmware **6.11.2001**.
 
-[Downloads](https://coolreader.nimbushub.eu/) · [Installation](https://coolreader.nimbushub.eu/installation.html) · [GitHub release](https://github.com/dderugin/pocketbook-coolreader/releases/latest)
+[Downloads: CoolReader and Easy Connect](https://pocketbook.nimbushub.eu/) · [Installation](https://pocketbook.nimbushub.eu/installation.html) · [GitHub release](https://github.com/dderugin/pocketbook-coolreader/releases/latest)
 
 The current build fixes standby frontlight state and adds large, outlined
 settings navigation buttons. It passes all twelve ARM/QEMU regression groups
@@ -25,7 +25,7 @@ retain preferences correctly.
 Extract the release ZIP and merge its **system** and **applications** folders
 into the reader’s USB storage, preserving existing settings. Safely eject it,
 then open **Applications → CoolReader**. For Library’s **Open with** menu,
-follow the [file-association instructions](https://coolreader.nimbushub.eu/installation.html#file-associations).
+follow the [file-association instructions](https://pocketbook.nimbushub.eu/installation.html#file-associations).
 
 See [the detailed guide](README-touch-hd3.txt) for backups and troubleshooting.
 
@@ -144,3 +144,12 @@ project and Git history.
 
 CoolReader is licensed under [GPL version 2](LICENSE). Third-party components
 retain their own notices and licenses in their source directories.
+
+## Easy Connect companion tool
+
+The [download website](https://pocketbook.nimbushub.eu/) also hosts
+[Easy Connect](https://pocketbook.nimbushub.eu/easy-connect.html), a standalone
+SSH and FTP app for PocketBook Touch HD 3 / PB632. Its page includes USB
+installation, password setup, the SSH pipe-shell command, FTP client settings,
+security limits and troubleshooting. CoolReader is not required. Easy Connect
+has separate code and downloads in [its repository](https://github.com/dderugin/pocketbook-easy-connect).

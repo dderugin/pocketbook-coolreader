@@ -1,0 +1,35 @@
+{
+  "application": "Easy Connect",
+  "version": "0.1.0",
+  "date": "2026-10-23",
+  "device": "PocketBook Touch HD 3 (PB632)",
+  "firmware": "U632.6.11.2001",
+  "url": "https://pocketbook.nimbushub.eu/easy-connect.html",
+  "zip": "https://pocketbook.nimbushub.eu/downloads/easy-connect-pb632-latest.zip",
+  "sha256": "cd8e2a80bf85c723401f94950d68d8a197a9c4bb46e0fbdb14076f274a0d238a",
+  "source": "https://pocketbook.nimbushub.eu/downloads/easy-connect-pb632-sources-latest.zip",
+  "source_sha256": "40a448655d751a0221be059cbdfb2e5cc48488d0a812f254d71971ff1c568d88",
+  "readme": "https://pocketbook.nimbushub.eu/downloads/easy-connect-README-latest.md",
+  "source_commit": "8884afd14c6e3d18d080754a88321929473aec9c",
+  "source_dirty": true,
+  "binaries": {
+    "easy-connect": "48b80734ba29c453d9d6be48594624cf9c29477ea319176e18ec5b3d88fd67e6",
+    "easy-connect.app": "5ed3ba51a86fc611515255705d062f3a96604387f2a37344e356e7560b220ff2",
+    "dropbear": "527d846f4d181a6c202d94d8e61c2e3a2d676aa97ae3dd8f95e9c77544e1216b",
+    "dropbearkey": "5fe3ee8561121b1d40cb683e8e45ef34dc88aee38a699aa42cf9e9f3035aa64a",
+    "vsftpd": "0dca0f750aff98ca455440198d7aef34296784287a4cdb812ea28895d40b0cea"
+  },
+  "runtime_file_count": 7,
+  "validation": [
+    "Five local CTest suites passed",
+    "Nineteen host SSH integration tests passed",
+    "Twenty-one packaging/tool tests passed",
+    "User confirmed SSH commands/basic pipe shell and anonymous FTP on PB632",
+    "Latest UI correction and full physical-device acceptance testing remain pending"
+  ],
+  "limitations": [
+    "Other models and firmware unverified",
+    "PTY unavailable on the tested reader account; use documented pipe-shell command",
+    "FTP is unencrypted; FTPS, SFTP and SCP are not included"
+  ]
+}

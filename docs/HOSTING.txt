@@ -1,50 +1,46 @@
-CoolReader download website
-==========================
+PocketBook tools website
+=======================
 
-Primary website: https://coolreader.nimbushub.eu/
-The page and every release download are served directly by nginx.
-No Kubernetes resources or application server are required.
+Primary website: https://pocketbook.nimbushub.eu/
+CoolReader and Easy Connect are independent tools in this collection.
+The old coolreader.nimbushub.eu domain redirects to the new domain, preserving paths.
+nginx serves all pages and downloads directly; no application server is required.
 
 Website files
 -------------
-index.html, styles.css, assets/favicon.svg, LICENSE.txt and release.json
-Downloads are served from /downloads/ on the same domain. The artifact URLs
-are absolute so the GitHub Pages mirror also points to the self-hosted files.
-No JavaScript, build process, external fonts, tracking or API keys are needed.
+index.html, installation.html, easy-connect.html, styles.css, assets/favicon.svg,
+LICENSE.txt, release.json, easy-connect-release.json, robots.txt and sitemap.xml.
+No JavaScript, external fonts, tracking or API keys are needed.
 
 Preview locally
 ---------------
-From docs/, run:
-  python3 -m http.server 8080 --bind 127.0.0.1
-Open http://127.0.0.1:8080. Downloads use the primary website.
+From docs/, run: python3 -m http.server 8080 --bind 127.0.0.1
+Open http://127.0.0.1:8080/. Downloads must be staged in downloads/ for local testing.
 
-Deployment
-----------
-See deploy/nginx/README.md in the repository for configuration, publication,
-TLS renewal, validation and rollback instructions.
-The nginx document root is /var/www/coolreader/current, a symlink to a release
-folder under /var/www/coolreader/releases/.
-Private keys remain in the server's /etc/letsencrypt directory.
+Publication
+-----------
+See deploy/nginx/README.md for routing, publication, HTTPS renewal and validation.
+The internal document root remains /var/www/coolreader/current for continuity.
+Publish into a new release directory and atomically switch that symlink.
+Always preserve both tools' downloads when updating either tool.
+Keep private keys and build workspaces out of the web root.
 
-Artifacts and permanent URLs
-----------------------------
-The page always links to the current build using these permanent addresses:
-  /downloads/coolreader-touch-hd3-latest.zip
-  /downloads/coolreader-touch-hd3-latest.zip.sha256
-  /downloads/coolreader-touch-hd3-source-latest.tar.gz
-Release notes always use GitHub's /releases/latest endpoint.
-The HTML contains no release date, versioned artifact filename or file size
-that requires editing when a new build is published. The installation guide
-uses the same permanent ZIP link. release.json records current version, source
-commit, checksum and validation details.
+Permanent downloads
+-------------------
+/downloads/coolreader-touch-hd3-latest.zip
+/downloads/coolreader-touch-hd3-latest.zip.sha256
+/downloads/coolreader-touch-hd3-source-latest.tar.gz
+/downloads/easy-connect-pb632-latest.zip
+/downloads/easy-connect-pb632-latest.zip.sha256
+/downloads/easy-connect-pb632-sources-latest.zip
+/downloads/easy-connect-pb632-sources-latest.zip.sha256
+/downloads/easy-connect-README-latest.md
 
-For every release, publish the new ZIP and matching source under those stable
-names in a new release directory. Copy build-info.json, automated-tests.json,
-verification-report.json, README-touch-hd3.txt and optional debug symbols into
-downloads/. Generate SHA256SUMS.txt using the deployed stable filenames;
-the ZIP's own .sha256 file must also use its deployed stable filename.
-Keep GitHub's release assets versioned. The website and GitHub ZIP contents
-must have identical SHA-256 values even though their filenames differ.
-Verify every file before switching current atomically. The existing permanent
-URLs then serve the new files. Remove superseded release directories only
-after verification. Keep only the latest artifacts on this server.
+Copy matching source and notices alongside each binary. Easy Connect's install
+ZIP contains only seven runtime files; sources and notices stay in its separate
+companion archive. No GitHub release is required for website publication.
+release.json describes CoolReader; easy-connect-release.json describes Easy Connect.
+Record the actual source state and verification limits, not assumed test results.
+Regenerate checksum sidecars and SHA256SUMS.txt using the deployed stable names.
+Verify HTTPS, all local links, artifact hashes and HTTP Range responses before
+removing superseded release directories.

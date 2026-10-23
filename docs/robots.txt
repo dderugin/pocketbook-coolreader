@@ -1,0 +1,3 @@
+User-agent: *
+Allow: /
+Sitemap: https://pocketbook.nimbushub.eu/sitemap.xml
