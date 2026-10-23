@@ -11,6 +11,7 @@
 *******************************************************/
 
 #include <stdlib.h>
+#include <algorithm>
 //include <unistd.h>      /* pause() */
 #include "../include/crgui.h"
 #include "../include/crtrace.h"
@@ -900,7 +901,7 @@ void CRGUIWindowBase::drawStatusBar()
     if ( !statusSkin.isNull() ) {
         statusSkin->draw( buf, statusRc );
     }
-    bool scroll = ( !sskin.isNull() && sskin->getLocation()==CRScrollSkin::Status && !scrollRc.isEmpty() );
+    bool scroll = ( !sskin.isNull() && (sskin->getLocation()==CRScrollSkin::Status || hasTouchSettingsNavigation()) && !scrollRc.isEmpty() );
     if ( scroll ) {
         drawScroll(sskin, scrollRc, false, _page-1, _pages, 1 );
     }
@@ -942,19 +943,32 @@ void CRGUIWindowBase::draw()
     CRLog::trace("exit CRGUIWindowBase::draw()");
 }
 
-class CRSettingsBackButtonSkin : public CRButtonSkin
+static int settingsNavigationButtonWidth(const lvRect &rc)
+{
+    // Leave at least a button-height of room for the page counter.
+    return std::min(rc.height() * 3, (rc.width() - rc.height()) / 2);
+}
+
+class CRSettingsNavigationButtonSkin : public CRButtonSkin
 {
     CRRectSkinRef _title;
+    bool _right;
 public:
-    CRSettingsBackButtonSkin(CRRectSkinRef title) : _title(title) {}
+    CRSettingsNavigationButtonSkin(CRRectSkinRef title, bool right = false)
+        : _title(title), _right(right) {}
     virtual void drawButton(LVDrawBuf &buf, const lvRect &rc, int flags = ENABLED)
     {
         _title->draw(buf, rc);
         lUInt32 color = _title->getTextColor();
-        if (flags & PRESSED) {
+        if (!(flags & ENABLED)) color = 0x999999;
+        if ((flags & ENABLED) && (flags & PRESSED)) {
             buf.FillRect(rc, color);
             color ^= 0x00FFFFFF;
         }
+        lvRect frame(rc);
+        int inset = std::max(4, rc.height() / 12);
+        frame.shrinkBy(lvRect(inset, inset, inset, inset));
+        buf.DrawFrame(frame, color, 2);
         // A bold, symmetric chevron scales with header height, never target width.
         int halfHeight = rc.height() / 4;
         int stroke = rc.height() / 12;
@@ -962,7 +976,7 @@ public:
         int left = rc.left + (rc.width() - halfHeight - stroke) / 2;
         int centerY = rc.top + rc.height() / 2;
         for (int y = -halfHeight; y <= halfHeight; ++y) {
-            int x = left + abs(y);
+            int x = left + (_right ? halfHeight - abs(y) : abs(y));
             buf.FillRect(x, centerY + y, x + stroke, centerY + y + 1, color);
         }
     }
@@ -988,6 +1002,30 @@ void CRGUIWindowBase::drawClient()
 void CRGUIWindowBase::drawScroll(CRScrollSkinRef sskin, lvRect rect, bool vertical, int pos, int maxpos, int pagesize)
 {
     LVDrawBuf & buf = *_wm->getScreen()->getCanvas();
+    if (hasTouchSettingsNavigation() && !vertical) {
+        CRRectSkinRef titleSkin = getSkin()->getTitleSkin();
+        titleSkin->draw(buf, rect);
+        buf.FillRect(rect.left, rect.top, rect.right, rect.top + 1,
+                     titleSkin->getTextColor());
+        int width = settingsNavigationButtonWidth(rect);
+        lvRect previous(rect), next(rect), label(rect);
+        previous.right = previous.left + width;
+        next.left = next.right - width;
+        label.left = previous.right;
+        label.right = next.left;
+        CRButtonSkinRef previousSkin(new CRSettingsNavigationButtonSkin(titleSkin));
+        CRButtonSkinRef nextSkin(new CRSettingsNavigationButtonSkin(titleSkin, true));
+        if (!_controlsCreated) {
+            addControl(new CRScrollButtonControl(this, previous, previousSkin, false));
+            addControl(new CRScrollButtonControl(this, next, nextSkin, true));
+        }
+        previousSkin->drawButton(buf, previous, isScrollEnabled(false) ? CRButtonSkin::ENABLED : 0);
+        nextSkin->drawButton(buf, next, isScrollEnabled(true) ? CRButtonSkin::ENABLED : 0);
+        int pages = pagesize > 0 ? (maxpos + pagesize - 1) / pagesize : 0;
+        int page = pages > 0 ? pos / pagesize + 1 : 0;
+        sskin->drawText(buf, label, lString32::itoa(page) + U" / " + lString32::itoa(pages));
+        return;
+    }
     lvRect rc = rect;
     sskin->draw(buf, rc);
     lvRect borders;
@@ -1179,7 +1217,7 @@ void CRGUIWindowBase::drawTitleBar()
     CRScrollSkinRef sskin = skin->getScrollSkin();
     lvRect scrollRc;
     getScrollRect( scrollRc );
-    bool scroll = ( !sskin.isNull() && sskin->getLocation()==CRScrollSkin::Title && !scrollRc.isEmpty() );
+    bool scroll = ( !sskin.isNull() && sskin->getLocation()==CRScrollSkin::Title && !hasTouchSettingsNavigation() && !scrollRc.isEmpty() );
     if ( scroll ) {
         drawScroll( sskin, scrollRc, false, _page-1, _pages, 1 );
         titleRc.right = scrollRc.left;
@@ -1214,12 +1252,10 @@ void CRGUIWindowBase::drawTitleBar()
                 // Reserve space for the settings caption.
                 touchRc.top = titleRc.top;
                 touchRc.bottom = titleRc.bottom;
-                int buttonWidth = titleRc.height() * 3;
-                if (buttonWidth > titleRc.width() / 2)
-                    buttonWidth = titleRc.width() / 2;
+                int buttonWidth = settingsNavigationButtonWidth(titleRc);
                 if (touchRc.width() < buttonWidth)
                     touchRc.right = touchRc.left + buttonWidth;
-                closeBtnSkin = CRButtonSkinRef(new CRSettingsBackButtonSkin(titleSkin));
+                closeBtnSkin = CRButtonSkinRef(new CRSettingsNavigationButtonSkin(titleSkin));
                 closeBtnRc = touchRc;
             }
             closeBtnSkin->drawButton(buf, closeBtnRc);
@@ -1554,6 +1590,31 @@ lvPoint CRMenu::getItemSize()
     return sz;
 }
 
+bool CRMenu::getStatusRect(lvRect &rc)
+{
+    if (!hasTouchSettingsNavigation() || _pageItems <= 0)
+        return CRGUIWindowBase::getStatusRect(rc);
+    CRMenuSkinRef skin = getSkin();
+    rc = _rect;
+    rc.shrinkBy(skin->getBorderWidths());
+    CRRectSkinRef separator = skin->getSeparatorSkin();
+    int separatorHeight = separator.isNull() ? 0 : separator->getMinSize().y;
+    // Divide space between the header, rows and footer without recursively
+    // asking for the client/title size while those rectangles are calculated.
+    int height = (rc.height() - separatorHeight * (_pageItems - 1)) / (_pageItems + 2);
+    lvRect title;
+    CRGUIWindowBase::getTitleRect(title);
+    height = std::max(height, title.height());
+    rc.top = rc.bottom - height;
+    return !rc.isEmpty();
+}
+
+bool CRMenu::getScrollRect(lvRect &rc)
+{
+    if (hasTouchSettingsNavigation()) return getStatusRect(rc);
+    return CRGUIWindowBase::getScrollRect(rc);
+}
+
 bool CRMenu::getTitleRect(lvRect &rc)
 {
     if (!CRGUIWindowBase::getTitleRect(rc))
@@ -1565,6 +1626,10 @@ bool CRMenu::getTitleRect(lvRect &rc)
     int separatorHeight = separator.isNull() ? 0 : separator->getMinSize().y;
     lvRect status;
     getStatusRect(status);
+    if (hasTouchSettingsNavigation()) {
+        rc.bottom = rc.top + status.height();
+        return true;
+    }
     // Share the available height between the header and the visible rows.
     // Avoid getItemHeight(): its client rectangle depends on this title.
     int rowHeight = (status.top - rc.top - separatorHeight * (_pageItems - 1))

@@ -708,6 +708,7 @@ class CRGUIWindowBase : public CRGUIWindow
         CRGUIControl *_selectedControl;
         CRWindowSkinRef _skin;
 
+        virtual bool hasTouchSettingsNavigation() const { return false; }
         /// draws frame, title, status and client
         virtual void draw();
         /// use to override status text
@@ -1170,6 +1171,10 @@ class CRMenu : public CRGUIWindowBase, public CRMenuItem {
         int _selectedItem;
         bool _pageUpdate;
         CRMenuSkinRef _skin;// = _wm->getSkin()->getMenuSkin( path.c_str() );
+        virtual bool hasTouchSettingsNavigation() const {
+            return _fullscreen && _skinName == U"#settings" &&
+                   _wm->getScreen()->isTouchSupported();
+        }
         // override for CRGUIWindow method
         virtual void draw();
         virtual void Draw( LVDrawBuf & buf, lvRect & rc, CRRectSkinRef skin, CRRectSkinRef valueSkin, bool selected );
@@ -1252,6 +1257,8 @@ class CRMenu : public CRGUIWindowBase, public CRMenuItem {
         virtual void toggleSubmenuValue();
         virtual int getItemHeight();
         virtual bool getTitleRect(lvRect &rc);
+        virtual bool getStatusRect(lvRect &rc);
+        virtual bool getScrollRect(lvRect &rc);
         virtual lvPoint getMaxItemSize();
         virtual lvPoint getItemSize();
         virtual lvPoint getSize();
@@ -1507,7 +1514,12 @@ public:
     CRScrollButtonControl(CRGUIWindowBase *parent, lvRect rc, CRButtonSkinRef skin, bool down) :
         CRButtonControl(parent, rc, skin, down ? BTN_SCROLL_DOWN : BTN_SCROLL_UP, DCMD_BUTTON_PRESSED),
         _down(down) {}
-    virtual bool isEnabled() { return _parent->isScrollEnabled(_down); }
+    virtual bool isEnabled() const { return _parent->isScrollEnabled(_down); }
+    virtual bool setSelected(bool selected) {
+        // Disabled arrows must stay dim when touched at the first/last page.
+        if (!isEnabled()) return false;
+        return CRButtonControl::setSelected(selected);
+    }
 };
 
 class CRToolBarControl : public CRGUIControl
