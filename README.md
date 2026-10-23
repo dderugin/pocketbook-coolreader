@@ -2,7 +2,7 @@
 
 CoolReader for **Touch HD 3 / PB632**, targeting firmware **6.11.2001**.
 
-[Downloads](https://coolreader.nimbushub.eu/) · [Installation](https://coolreader.nimbushub.eu/installation.html) · [GitHub release](https://github.com/dderugin/pocketbook-coolreader/releases/tag/touch-hd3-fw6-settings-navigation)
+[Downloads](https://coolreader.nimbushub.eu/) · [Installation](https://coolreader.nimbushub.eu/installation.html) · [GitHub release](https://github.com/dderugin/pocketbook-coolreader/releases/latest)
 
 The current build fixes standby frontlight state and adds large, outlined
 settings navigation buttons. It passes all twelve ARM/QEMU regression groups

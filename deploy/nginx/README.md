@@ -24,11 +24,24 @@ verification report and checksums described by `docs/release.json`. Keep only th
 current build on this server; remove previous release directories after validation. Do not copy the SDK,
 firmware image, workspace, SSH keys or nginx configuration into the web root.
 
-On the server, verify `downloads/SHA256SUMS.txt` with `sha256sum -c` from the
-downloads directory. The install ZIP must retain this SHA-256:
+The page and installation guide use permanent download paths:
 
-```text
-eeb198b878e6c6ec0ebf7ce15ef872c36699009256945536664e077970cefe68
+- `/downloads/coolreader-touch-hd3-latest.zip`
+- `/downloads/coolreader-touch-hd3-latest.zip.sha256`
+- `/downloads/coolreader-touch-hd3-source-latest.tar.gz`
+
+Publish each new build at those names inside the new release directory. Do not
+change the HTML download links for each release. GitHub release notes use
+`https://github.com/dderugin/pocketbook-coolreader/releases/latest`.
+Keep the GitHub assets versioned and copy the same bytes to the stable website
+filenames. Regenerate website checksum files using the stable names. Update
+`docs/release.json` with the current revision, source commit and checksums.
+
+On the server, verify the current downloads from their directory:
+
+```sh
+sha256sum -c SHA256SUMS.txt
+sha256sum -c coolreader-touch-hd3-latest.zip.sha256
 ```
 
 Use root-owned directories with mode 755 and files with mode 644. Publish into

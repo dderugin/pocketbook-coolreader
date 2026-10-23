@@ -26,17 +26,25 @@ The nginx document root is /var/www/coolreader/current, a symlink to a release
 folder under /var/www/coolreader/releases/.
 Private keys remain in the server's /etc/letsencrypt directory.
 
-Artifacts
----------
-The site serves the current install ZIP, source archive, build metadata,
-verification report, installation text and checksums. Source matches commit
-ebecbb7f256aba7983bdc65d837609134b5cbd11, merged into master via PR #4.
-Older download files and release directories are removed after validation.
+Artifacts and permanent URLs
+----------------------------
+The page always links to the current build using these permanent addresses:
+  /downloads/coolreader-touch-hd3-latest.zip
+  /downloads/coolreader-touch-hd3-latest.zip.sha256
+  /downloads/coolreader-touch-hd3-source-latest.tar.gz
+Release notes always use GitHub's /releases/latest endpoint.
+The HTML contains no release date, versioned artifact filename or file size
+that requires editing when a new build is published. The installation guide
+uses the same permanent ZIP link. release.json records current version, source
+commit, checksum and validation details.
 
-Device: PocketBook Touch HD 3 / PB632
-Firmware: 6.11.2001
-Revision: crengine-3.2.59-1
-Validation: eleven ARM/QEMU regression groups and package checks passed;
-user confirmed working on the Touch HD 3 after the margin fix.
-Install ZIP SHA256:
-eeb198b878e6c6ec0ebf7ce15ef872c36699009256945536664e077970cefe68
+For every release, publish the new ZIP and matching source under those stable
+names in a new release directory. Copy build-info.json, automated-tests.json,
+verification-report.json, README-touch-hd3.txt and optional debug symbols into
+downloads/. Generate SHA256SUMS.txt using the deployed stable filenames;
+the ZIP's own .sha256 file must also use its deployed stable filename.
+Keep GitHub's release assets versioned. The website and GitHub ZIP contents
+must have identical SHA-256 values even though their filenames differ.
+Verify every file before switching current atomically. The existing permanent
+URLs then serve the new files. Remove superseded release directories only
+after verification. Keep only the latest artifacts on this server.
