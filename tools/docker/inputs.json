@@ -1,0 +1,12 @@
+{
+  "sdk": {
+    "filename": "SDK-B288-6.10.7z",
+    "url": "https://github.com/Sean-on-Git/PocketBook-SDK/releases/download/6.10/SDK-B288-6.10.7z",
+    "sha256": "18405fb276535d53a4b70d2bbf4033313cded58da5002d563ccf7e1838440c0b"
+  },
+  "firmware": {
+    "filename": "sw_20260901_U632_6.11.2001_user.zip",
+    "url": "https://download.pocketbook-int.com/fw/Yitoa/632/user/20260901/sw_20260901_U632_6.11.2001_user.zip",
+    "sha256": "e9fc183f4c281e1d12c9f184215f4c119dc2b1865fac8e1a7dfff69c54aa8fcc"
+  }
+}

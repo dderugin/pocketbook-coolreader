@@ -30,6 +30,18 @@ See [the detailed guide](README-touch-hd3.txt) for backups and troubleshooting.
 
 ## Build and test
 
+For a local macOS (including Apple Silicon) or Linux build with Docker:
+
+```sh
+CR3_REVISION=local bash tools/docker-build-touch-hd3.sh
+```
+
+The wrapper downloads verified SDK/firmware inputs, caches them in a Linux
+volume, runs the ARM tests and writes artifacts to `dist/`. See
+[local build setup and Colima/Rosetta settings](BUILDING.md).
+
+For an already configured native Linux environment:
+
 Use Linux with CMake 3.18+, Make, gettext, zip, OpenSSL tools, Python 3 and the
 B288 SDK described in the detailed guide. Keep SDKs, extracted firmware and host tools under `work/`.
 
@@ -38,7 +50,7 @@ export POCKETBOOK_SDK="$PWD/work/sdk/SDK-B288-6.10"
 bash tools/build-touch-hd3.sh
 ```
 
-The script builds the ARM application, keeps debug symbols, runs ten ARM/QEMU
+The script builds the ARM application, keeps debug symbols, runs eleven ARM/QEMU
 regression groups and checks packaging evidence before producing
 `dist/coolreader-touch-hd3-fw6.11.2001-dev.zip` and its SHA-256 file.
 Set `CR3_REVISION` to label a candidate and `CR3_BUILD_DIR` to use another build

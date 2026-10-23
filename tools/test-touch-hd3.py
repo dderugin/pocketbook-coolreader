@@ -2,7 +2,7 @@
 """Run ARM regressions using the configured build and extracted firmware runtime."""
 from pathlib import Path
 import argparse, datetime, io, json, os, re, shlex, subprocess, zipfile
-import struct, zlib
+import struct, zlib, shutil
 import http.server, ssl, threading
 from build_metadata import sha256, source_metadata
 root = Path(__file__).resolve().parent.parent
@@ -18,7 +18,8 @@ report_path.unlink(missing_ok=True)
 source_before = source_metadata(root)
 sdk = Path(os.environ.get('POCKETBOOK_SDK', root / 'work/sdk/SDK-B288-6.10'))
 compiler = sdk / 'usr/bin/arm-obreey-linux-gnueabi-g++'
-qemu = root / 'work/host/usr/bin/qemu-arm'
+bundled_qemu = root / 'work/host/usr/bin/qemu-arm'
+qemu = Path(os.environ.get('CR3_QEMU') or (str(bundled_qemu) if bundled_qemu.is_file() else shutil.which('qemu-arm') or 'qemu-arm'))
 runtime = root / 'work/firmware/runtime'
 out = build / 'arm-regressions'
 out.mkdir(exist_ok=True)
