@@ -46,7 +46,7 @@ and saved preferences working with the modern engine.
 Validation and remaining work
 -----------------------------
 Run tools/build-touch-hd3.sh with the B288 SDK and the extracted firmware runtime.
-The eleven ARM/QEMU regression groups cover the retained menu geometry,
+The twelve ARM/QEMU regression groups cover the retained menu geometry,
 startup/Cyrillic FB2 layout, captured preferences, image decoding, TLS,
 dictionaries, history, archives and failed atomic writes. Migration cases also
 exercise supplementary Unicode, EPUB CSS/image page painting and parsing older

@@ -23,7 +23,7 @@ This also checks absent CSS ancestors/null nodes, skin language selection
 
 Reliability review regressions
 ------------------------------
-The build script now runs eleven ARM/QEMU regressions before packaging. The new
+The build script now runs twelve ARM/QEMU regressions before packaging. The new
 cases exercise dictionary UTF-8 buffer boundaries and redirect guards; XML
 history/bookmark round trips, failed and short writes, atomic replacement and
 backup retention; bounded archive fragments and UTF-8/legacy ZIP entry names,
@@ -66,7 +66,7 @@ matches a menu row, the Back button responds throughout a full-height target
 three times as wide, touches outside it miss, the first item stays below it,
 and other menus retain their skin height.
 It also checks pressed feedback and exact normal-state restoration after release,
-and saves portrait/landscape header previews in <build>/arm-regressions/*.pgm.
+and saves full portrait/landscape menu previews in <build>/arm-regressions/*.pgm.
 
 Dependency upgrades
 -------------------
@@ -104,3 +104,20 @@ The document-render group checks every margin value offered by the PocketBook
 menu survives preference validation. It paints a long FB2 paragraph before and
 after applying a margin-only preferences delta, without an explicit second
 render, and checks all four text bounds and effective margins.
+
+Standby frontlight regression
+----------------------------
+standby-frontlight uses the production FW6 standby helper with mocked InkView
+light APIs. It covers manually disabled lights with remembered brightness,
+on/off restoration across repeated cycles and duplicate notifications,
+automatic brightness changes, and unavailable frontlight hardware. It verifies
+that standby never writes the brightness setting. Physical frontlight and
+cover-screen behaviour still require verification on a reader.
+
+Touch settings navigation
+-------------------------
+The skin-language-symbol group checks outlined Back/Previous/Next targets of
+equal size, full-height paging hit regions, the non-interactive page counter,
+pressed feedback and first/middle/last/single-page enabled states. The footer
+reserves its own space below the menu rows in portrait and landscape. Other
+menus retain their skin's original header and scroll layout.

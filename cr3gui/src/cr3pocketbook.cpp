@@ -18,6 +18,7 @@
 #include <inkview.h>
 #include "pbdictionary.h"
 #ifdef POCKETBOOK_FW6
+#include "pbstandbyfrontlight.h"
 #include <signal.h>
 #include <sys/ucontext.h>
 #include <unistd.h>
@@ -5183,21 +5184,33 @@ void SetSaveStateTimer(){
 
 #ifdef POCKETBOOK_PRO_FW5
 
+#ifdef POCKETBOOK_FW6
+static PBStandbyFrontlight standbyFrontlight;
+#else
 bool restoringFrontLightRequired = false;
+#endif
 
 void toggleFrontLight() {
     SwitchFrontlightState();
 }
 void turnOffFrontLightIfNeeded() {
+#ifdef POCKETBOOK_FW6
+    standbyFrontlight.suspend();
+#else
     restoringFrontLightRequired = GetFrontlightState() >= 0;
     if( restoringFrontLightRequired )
         SwitchFrontlightState();
+#endif
 }
 void restoreFrontLightIfNeeded() {
+#ifdef POCKETBOOK_FW6
+    standbyFrontlight.resume();
+#else
     if( restoringFrontLightRequired ) {
         SwitchFrontlightState();
         restoringFrontLightRequired = false;
     }
+#endif
 }
 int getFrontLightValue() {
     return min(max(GetFrontlightState(), 0), 100);

@@ -10,8 +10,11 @@ if [[ -d "$root/work/host/usr/bin" ]]; then
 fi
 build="${CR3_BUILD_DIR:-$root/work/build-touch-hd3-fw6}"
 revision="${CR3_REVISION:-dev}"
+# Skin archives are built on the host, never with the SDK target executable.
+host_zip=$(command -v zip) || { echo "Install the host zip utility" >&2; exit 1; }
 cmake -S "$root" -B "$build" \
     -DCMAKE_TOOLCHAIN_FILE="$root/tools/toolchain-touch-hd3.cmake" \
+    -DZIP_EXECUTABLE="$host_zip" \
     -DCMAKE_POLICY_VERSION_MINIMUM=3.5 \
     -DCMAKE_BUILD_TYPE=Release -DCMAKE_SKIP_RPATH=ON \
     -DCMAKE_C_FLAGS_RELEASE='-O2 -g -DNDEBUG' \
