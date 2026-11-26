@@ -1,6 +1,7 @@
 #include "../cr3gui/src/mainwnd.h"
 #include "../cr3gui/src/bmkdlg.h"
 #include "../cr3gui/src/recentdlg.h"
+#include "../cr3gui/src/selnavig.h"
 #include "cri18n.h"
 #include "testutil.h"
 #include <inkview.h>
@@ -25,6 +26,53 @@ static void preview(Screen &screen,const std::string &path) {
     for(int y=0;y<b->GetHeight();++y) for(int x=0;x<b->GetWidth();++x) fputc(b->GetPixel(x,y),f);
     fclose(f);
 }
+
+static void tap(CRGUIWindowManager &wm, int x, int y) {
+    CHECK(wm.onTouch(x, y, CRTOUCH_DOWN));
+    wm.processPostedEvents();
+    CHECK(wm.onTouch(x, y, CRTOUCH_UP));
+    wm.processPostedEvents();
+}
+
+static void checkSearchNavigation(CRGUIWindowManager &wm, Screen &screen, V3DocViewWin *reader) {
+    wm.update(true, true);
+    const lString32 query(U"Reader screen test");
+    int first = reader->findPagesText(query, 0, 1);
+    CHECK(first >= 0);
+    auto *search = new CRSelNavigationDialog(&wm, reader, query);
+    wm.activateWindow(search);
+    wm.update(true, true);
+    lvRect bar = search->getRect();
+    CHECK(!bar.isEmpty() && bar.bottom == screen.getHeight());
+    auto canvas = screen.getCanvas();
+    auto frame = canvas->GetPixel(4, bar.top + 4);
+    CHECK(frame != canvas->GetPixel(0, bar.top));
+
+    reader->setDirty();
+    wm.update(false, true);
+    CHECK(canvas->GetPixel(4, bar.top + 4) == frame);
+    tap(wm, screen.getWidth() / 2, bar.top - 1);
+    CHECK(wm.getTopVisibleWindow() == search && reader->getDocView()->getCurPage() == first);
+
+    int y = bar.top + bar.height() / 2;
+    tap(wm, bar.right - bar.width() / 6, y);
+    CHECK(wm.getTopVisibleWindow() == search && reader->getDocView()->getCurPage() > first);
+    tap(wm, bar.left + bar.width() / 6, y);
+    CHECK(wm.getTopVisibleWindow() == search && reader->getDocView()->getCurPage() == first);
+
+    int portraitWidth = screen.getWidth();
+    int portraitHeight = screen.getHeight();
+    wm.reconfigure(portraitHeight, portraitWidth, CR_ROTATE_ANGLE_90);
+    wm.processPostedEvents();
+    bar = search->getRect();
+    CHECK(bar.width() == portraitHeight && bar.bottom == portraitWidth);
+    tap(wm, bar.left + bar.width() / 2, bar.top + bar.height() / 2);
+    CHECK(wm.getTopVisibleWindow() == reader);
+    CHECK(!reader->getDocView()->getMarkedRanges() || reader->getDocView()->getMarkedRanges()->length() == 0);
+    wm.reconfigure(portraitWidth, portraitHeight, CR_ROTATE_ANGLE_0);
+    wm.processPostedEvents();
+}
+
 int main(int argc,char **argv) {
     CHECK(argc==6);InitFontManager(lString8());
     CHECK(fontMan->RegisterFont(lString8(argv[1])));CHECK(fontMan->RegisterFont(lString8(argv[2])));
@@ -48,6 +96,7 @@ int main(int argc,char **argv) {
         CHECK(reader->getDocView()->LoadDocument(LVCreateStringStream(xml),U"reader-screens.fb2"));
         reader->getDocView()->getDocProps()->setString(DOC_PROP_FILE_PATH,lString32("/books/Very long folder & metadata/<literal>/another folder/"));
         wm.activateWindow(reader);
+        checkSearchNavigation(wm, screen, reader);
         reader->showAboutDialog();
         auto *info=dynamic_cast<CRViewDialog *>(wm.getTopVisibleWindow());CHECK(info && info!=reader);
         CHECK(info->getSkinName()==U"#settings");

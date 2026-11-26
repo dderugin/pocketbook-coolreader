@@ -398,6 +398,7 @@ class CRPocketBookScreen : public CRGUIScreenBase {
 private:
     bool _forceSoft;
     bool _update_gray;
+    bool _searchKeyboardOpen = false;
     CRGUIWindowBase *m_mainWindow;
     int m_bpp;
     lUInt8 *_buf4bpp;
@@ -441,6 +442,8 @@ public:
         _forceSoft = force;
         return ret;
     }
+    void setSearchKeyboardOpen(bool open) { _searchKeyboardOpen = open; }
+    bool isSearchKeyboardOpen() const { return _searchKeyboardOpen; }
     virtual void flush( bool full );
     /// creates compatible canvas of specified size
     virtual LVDrawBuf * createCanvas( int dx, int dy )
@@ -824,6 +827,9 @@ void CRPocketBookScreen::draw(int x, int y, int w, int h)
 void CRPocketBookScreen::flush( bool full )
 {
     LVPerfScope timing("screen.flush");
+    // InkView owns the display until the book search keyboard closes.
+    if (_searchKeyboardOpen)
+        return;
     if ( _updateRect.isEmpty() && !full && !getTurboUpdateEnabled() ) {
         CRLog::trace("CRGUIScreenBase::flush() - update rectangle is empty");
         return;
@@ -1574,8 +1580,17 @@ public:
         : CRPocketBookInkViewWindow( wm )	{}
     virtual void showWindow()
     {
+        // Paint the book after closing the reader menu, before InkView saves the background.
+        _wm->update(false, true);
+        CRPocketBookScreen::instance->setSearchKeyboardOpen(true);
         OpenKeyboard(const_cast<char *>("@Search"), key_buffer, KEY_BUFFER_LEN, 0, searchHandler);
     }
+    virtual void closing()
+    {
+        CRPocketBookScreen::instance->setSearchKeyboardOpen(false);
+    }
+    virtual bool onTouch(int, int, CRGUITouchEventType) { return true; }
+    virtual bool onKeyPressed(int, int) { return true; }
 };
 
 #ifndef POCKETBOOK_FW6
@@ -5206,6 +5221,10 @@ bool pbNetwork(const char *action) {
 void stopStandByTimer();
 void restartStandByTimer();
 void enterStandByMode() {
+    if (CRPocketBookScreen::instance->isSearchKeyboardOpen()) {
+        restartStandByTimer();
+        return;
+    }
 #ifdef POCKETBOOK_FW6
     ClearTimer(prefetchPageTimer);
     ClearTimer(coverPreparationTimer);

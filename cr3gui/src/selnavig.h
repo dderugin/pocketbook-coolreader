@@ -21,11 +21,21 @@ protected:
     CRViewDialog * _mainwin;
     lString32 _pattern;
     void moveBy( int delta );
+#if CR_POCKETBOOK == 1
+    int _pressedCommand = 0;
+    virtual void draw();
+#endif
 public:
     CRSelNavigationDialog(  CRGUIWindowManager * wm, CRViewDialog * mainwin, lString32 pattern );
 
     /// returns true if command is processed
     virtual bool onCommand( int command, int params );
+#if CR_POCKETBOOK == 1
+    virtual void reconfigure(int flags);
+    virtual bool isDirty() { return true; } // The book can repaint beneath the controls.
+    virtual bool onTouch(int x, int y, CRGUITouchEventType type);
+    virtual bool onTouchEvent(int x, int y, CRGUITouchEventType type);
+#endif
 };
 
 #endif
